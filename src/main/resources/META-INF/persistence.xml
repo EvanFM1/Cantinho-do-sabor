@@ -1,0 +1,38 @@
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             version="3.0">
+
+    <persistence-unit name="SorveteriaPU" transaction-type="RESOURCE_LOCAL">
+
+        <!-- Provider -->
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+
+        <!-- Entidades -->
+        <class>org.example.entity.CategoriaEntity</class>
+        <class>org.example.entity.ClienteEntity</class>
+        <class>org.example.entity.FuncionarioEntity</class>
+        <class>org.example.entity.PedidoEntity</class>
+        <class>org.example.entity.ProdutoEntity</class>
+        <class>org.example.entity.VendaEntity</class>
+
+        <properties>
+
+            <!-- Conexão -->
+            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/sorveteria"/>
+            <property name="jakarta.persistence.jdbc.user" value="nick"/>
+            <property name="jakarta.persistence.jdbc.password" value="nicki12072007"/>
+
+            <!-- Hibernate -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+
+            <!-- Debug -->
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+
+            <!-- Flyway controla o banco -->
+            <property name="hibernate.hbm2ddl.auto" value="validate"/>
+
+        </properties>
+    </persistence-unit>
+
+</persistence>
