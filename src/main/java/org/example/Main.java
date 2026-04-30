@@ -151,6 +151,9 @@ public class Main {
                     ProdutoEntity p = new ProdutoEntity();
                     System.out.print("Nome do Sabor: ");
                     p.setNome(scanner.nextLine());
+                    System.out.print("Preço: ");
+                    p.setPreco(scanner.nextBigDecimal());
+                    scanner.nextLine();
                     System.out.print("Descrição: ");
                     p.setDescricao(scanner.nextLine());
                     System.out.print("ID da Categoria: ");

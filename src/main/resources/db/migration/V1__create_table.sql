@@ -34,6 +34,7 @@ CREATE TABLE produtos (
   id BIGSERIAL PRIMARY KEY,
   nome VARCHAR(100) NOT NULL,
   descricao VARCHAR(500),
+  preco DECIMAL(10, 2) NOT NULL,
   fk_categoria_id BIGINT NOT NULL,
   CONSTRAINT fk_produto_categoria FOREIGN KEY (fk_categoria_id) REFERENCES categorias (id)
 );

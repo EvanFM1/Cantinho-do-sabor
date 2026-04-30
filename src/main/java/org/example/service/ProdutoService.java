@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import org.example.entity.CategoriaEntity;
 import org.example.entity.ProdutoEntity;
 import org.example.repository.ProdutoRepository;
+
+import java.math.BigDecimal;
 import java.util.List;
 
 public class ProdutoService {
@@ -23,6 +25,10 @@ public class ProdutoService {
 
             if (produto.getNome() == null || produto.getNome().isEmpty()) {
                 throw new RuntimeException("Nome do produto é obrigatório!");
+            }
+
+            if (produto.getPreco() == null || produto.getPreco().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new RuntimeException("Preço deve ser maior que zero!");
             }
 
             CategoriaEntity categoria = entityManager.find(CategoriaEntity.class, categoriaId);
