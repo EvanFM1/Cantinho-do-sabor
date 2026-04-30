@@ -2,6 +2,8 @@ package org.example.entity;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "produtos")
 public class ProdutoEntity {
@@ -15,6 +17,9 @@ public class ProdutoEntity {
 
     @Column(name = "descricao", length = 500)
     private String descricao;
+
+    @Column(name = "preco", nullable = false)
+    private BigDecimal preco;
 
     @ManyToOne
     @JoinColumn(name = "fk_categoria_id", nullable = false)
@@ -42,6 +47,14 @@ public class ProdutoEntity {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public BigDecimal getPreco() {
+        return preco;
+    }
+
+    public void setPreco(BigDecimal preco) {
+        this.preco = preco;
     }
 
     public CategoriaEntity getCategoria() {
