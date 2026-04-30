@@ -21,6 +21,9 @@ public class ProdutoEntity {
     @Column(name = "preco", nullable = false)
     private BigDecimal preco;
 
+    @Column(name = "estoque", nullable = false)
+    private Integer estoque = 0;
+
     @ManyToOne
     @JoinColumn(name = "fk_categoria_id", nullable = false)
     private CategoriaEntity categoria;
@@ -55,6 +58,14 @@ public class ProdutoEntity {
 
     public void setPreco(BigDecimal preco) {
         this.preco = preco;
+    }
+
+    public Integer getEstoque() {
+        return estoque;
+    }
+
+    public void setEstoque(Integer estoque) {
+        this.estoque = estoque;
     }
 
     public CategoriaEntity getCategoria() {

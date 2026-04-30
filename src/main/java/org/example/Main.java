@@ -5,8 +5,7 @@ import org.example.entity.*;
 import org.example.service.*;
 import org.flywaydb.core.Flyway;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
 
@@ -48,9 +47,10 @@ public class Main {
             System.out.println("1 - Clientes");
             System.out.println("2 - Categorias (Picolé, Peso, Pote)");
             System.out.println("3 - Produtos (Sabores)");
-            System.out.println("4 - Funcionários");
-            System.out.println("5 - Pedidos (Abrir/Finalizar)");
-            System.out.println("6 - Vendas (Caixa/Pagamento)");
+            System.out.println("4 - Gerenciar Estoque");
+            System.out.println("5 - Funcionários");
+            System.out.println("6 - Pedidos (Abrir/Finalizar)");
+            System.out.println("7 - Vendas (Caixa/Pagamento)");
             System.out.println("0 - Sair");
 
             op = Integer.parseInt(scanner.nextLine());
@@ -60,9 +60,10 @@ public class Main {
                     case 1 -> menuClientes(clienteService);
                     case 2 -> menuCategorias(categoriaService);
                     case 3 -> menuProdutos(produtoService);
-                    case 4 -> menuFuncionarios(funcionarioService);
-                    case 5 -> menuPedidos(pedidoService);
-                    case 6 -> menuVendas(vendaService);
+                    case 4 -> menuEstoque(produtoService);
+                    case 5 -> menuFuncionarios(funcionarioService);
+                    case 6 -> menuPedidos(pedidoService);
+                    case 7 -> menuVendas(vendaService);
                 }
             } catch (Exception e) {
                 System.out.println("❌ " + e.getMessage());
@@ -164,8 +165,68 @@ public class Main {
                 }
                 case 2 -> {
                     service.listarProdutos().forEach(p ->
-                            System.out.println("ID: " + p.getId() + " | Sabor: " + p.getNome() + " | Categoria: " + p.getCategoria().getNome()));
+                            System.out.println("[\uD83C\uDF67] ID: " + p.getId()
+                                    + " | Nome: " + p.getNome()
+                                    + " | Preço: " + p.getPreco()
+                                    + " | Estoque: " + p.getEstoque())
+                    );
                 }
+            }
+        } while (op != 0);
+    }
+
+    // -=-=-=-=-=-=- ESTOQUE -=-=-=-=-=-=-
+    private static void menuEstoque(ProdutoService service) {
+        int op;
+        do {
+            System.out.println("\n--- ESTOQUE ---");
+            System.out.println("1 - Adicionar estoque");
+            System.out.println("2 - Remover estoque");
+            System.out.println("3 - Listar produtos");
+            System.out.println("0 - Voltar");
+
+            op = Integer.parseInt(scanner.nextLine());
+            switch (op) {
+                case 1 -> {
+                    service.listarProdutos().forEach(p ->
+                            System.out.println("[\uD83C\uDF67] ID: " + p.getId()
+                                    + " | Nome: " + p.getNome()
+                                    + " | Preço: " + p.getPreco()
+                                    + " | Estoque: " + p.getEstoque())
+                    );
+
+                    System.out.println("ID do produto: ");
+                    Long id = Long.parseLong(scanner.nextLine());
+                    System.out.print("Quantidade a adicionar: ");
+                    int qtd = Integer.parseInt(scanner.nextLine());
+                    service.adicionarEstoque(id, qtd);
+                    System.out.println("✅ Estoque atualizado!");
+                }
+                case 2 -> {
+                    service.listarProdutos().forEach(p ->
+                            System.out.println("[\uD83C\uDF67] ID: " + p.getId()
+                                    + " | Nome: " + p.getNome()
+                                    + " | Preço: " + p.getPreco()
+                                    + " | Estoque: " + p.getEstoque())
+                    );
+
+                    System.out.println("ID do produto: ");
+                    Long id = Long.parseLong(scanner.nextLine());
+                    System.out.print("Quantidade a remover: ");
+                    int qtd = Integer.parseInt(scanner.nextLine());
+                    service.removerEstoque(id, qtd);
+                    System.out.println("✅ Estoque atualizado!");
+                }
+                case 3 -> {
+                    service.listarProdutos().forEach(p ->
+                            System.out.println("[\uD83C\uDF67] ID: " + p.getId()
+                                    + " | Nome: " + p.getNome()
+                                    + " | Preço: " + p.getPreco()
+                                    + " | Estoque: " + p.getEstoque())
+                    );
+                }
+                case 0 -> System.out.println("Voltando...");
+                default -> System.out.println("Opção inválida!");
             }
         } while (op != 0);
     }
@@ -196,7 +257,7 @@ public class Main {
                 }
                 case 2 -> {
                     service.listarFuncionarios().forEach(f ->
-                            System.out.println("ID: " + f.getId() + " | Nome: " + f.getNome() + " | Cargo: " + f.getCargo()));
+                            System.out.println("[\\uD83D\\uDCB8] ID: " + f.getId() + " | Nome: " + f.getNome() + " | Cargo: " + f.getCargo()));
                 }
             }
         } while (op != 0);
