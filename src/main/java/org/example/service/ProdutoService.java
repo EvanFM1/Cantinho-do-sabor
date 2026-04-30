@@ -101,4 +101,47 @@ public class ProdutoService {
             throw e;
         }
     }
+
+    public void adicionarEstoque(Long id, int quantidade) {
+        EntityTransaction transaction = entityManager.getTransaction();
+
+        try {
+            transaction.begin();
+            ProdutoEntity produto = produtoRepository.buscarPorId(id)
+                            .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
+
+            if (quantidade <= 0) {
+                throw new RuntimeException("Quantidade deve ser maior que zero!");
+            }
+            produto.setEstoque(produto.getEstoque() + quantidade);
+            produtoRepository.salvar(produto);
+            transaction.commit();
+        } catch (Exception e) {
+            transaction.rollback();
+            throw e;
+        }
+    }
+
+    public void removerEstoque(Long id, int quantidade) {
+        EntityTransaction transaction = entityManager.getTransaction();
+
+        try {
+            transaction.begin();
+            ProdutoEntity produto = produtoRepository.buscarPorId(id)
+                    .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
+
+            if (quantidade < 0) {
+                throw new RuntimeException("Quantidade deve ser maior que zero!");
+            }
+            if (produto.getEstoque() < quantidade) {
+                throw new RuntimeException("Estoque insuficiente!");
+            }
+            produto.setEstoque(produto.getEstoque() - quantidade);
+            produtoRepository.salvar(produto);
+            transaction.commit();
+        } catch (Exception e) {
+            transaction.rollback();
+            throw e;
+        }
+    }
 }

@@ -2,7 +2,7 @@ CREATE TABLE categorias (
    id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(50) NOT NULL,
     valor DECIMAL(10, 2) NOT NULL,
-   descricao VARCHAR(500)
+    descricao VARCHAR(500)
 );
 
 
@@ -35,6 +35,7 @@ CREATE TABLE produtos (
   nome VARCHAR(100) NOT NULL,
   descricao VARCHAR(500),
   preco DECIMAL(10, 2) NOT NULL,
+  estoque INT NOT NULL DEFAULT 0,
   fk_categoria_id BIGINT NOT NULL,
   CONSTRAINT fk_produto_categoria FOREIGN KEY (fk_categoria_id) REFERENCES categorias (id)
 );
