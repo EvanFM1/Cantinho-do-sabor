@@ -28,6 +28,8 @@ public class ProdutoEntity {
     @JoinColumn(name = "fk_categoria_id", nullable = false)
     private CategoriaEntity categoria;
 
+    public ProdutoEntity() {}
+
     public Long getId() {
         return id;
     }
