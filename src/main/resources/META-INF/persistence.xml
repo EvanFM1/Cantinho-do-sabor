@@ -13,6 +13,7 @@
         <class>org.example.entity.PedidoEntity</class>
         <class>org.example.entity.ProdutoEntity</class>
         <class>org.example.entity.VendaEntity</class>
+        <class>org.example.entity.UsuarioEntity</class>
 
         <properties>
 

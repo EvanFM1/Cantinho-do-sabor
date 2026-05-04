@@ -28,11 +28,12 @@ public class Main {
             System.out.println("⚠️ Aviso Flyway: " + e.getMessage());
         }
 
-        // JPA - Ajustado para o persistence unit da sorveteria
+        // JPA Ajustado para o persistence unit da sorveteria
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("SorveteriaPU");
         EntityManager em = emf.createEntityManager();
 
         // Services da Sorveteria
+        UsuarioService usuarioService = new UsuarioService(em);
         ClienteService clienteService = new ClienteService(em);
         CategoriaService categoriaService = new CategoriaService(em);
         ProdutoService produtoService = new ProdutoService(em);
@@ -40,6 +41,7 @@ public class Main {
         PedidoService pedidoService = new PedidoService(em);
         VendaService vendaService = new VendaService(em);
 
+        telaLogin(usuarioService);
         int op;
 
         do {
@@ -61,17 +63,46 @@ public class Main {
                     case 2 -> menuCategorias(categoriaService);
                     case 3 -> menuProdutos(produtoService);
                     case 4 -> menuEstoque(produtoService);
-                    case 5 -> menuFuncionarios(funcionarioService);
+                    case 5 -> {
+                        if (!usuarioService.isAdmin()) {
+                            System.out.println("🚫 Acesso negado! Apenas ADMIN pode acessar Funcionários.");
+                            break;
+                        }
+                        menuFuncionarios(funcionarioService);
+                    }
                     case 6 -> menuPedidos(pedidoService);
                     case 7 -> menuVendas(vendaService);
                 }
             } catch (Exception e) {
-                System.out.println("❌ " + e.getMessage());
+                System.out.println("🚫 " + e.getMessage());
             }
         } while (op != 0);
-
         em.close();
         emf.close();
+    }
+
+    // -=-=-=-=-=-=- LOGIN -=-=-=-=-=-=-
+    private static void telaLogin(UsuarioService service) {
+        while (true) {
+            try {
+                System.out.println("\n===== LOGIN =====");
+
+                System.out.print("Login: ");
+                String login = scanner.nextLine();
+
+                System.out.print("Senha: ");
+                String senha = scanner.nextLine();
+
+                UsuarioEntity usuario = service.login(login, senha);
+
+                System.out.println("✅ Bem-vindo, " + usuario.getLogin() +
+                        " (" + usuario.getPerfil() + ")");
+                break;
+
+            } catch (Exception e) {
+                System.out.println("❌ " + e.getMessage());
+            }
+        }
     }
 
     // -=-=-=-=-=-=- CLIENTES -=-=-=-=-=-=-
@@ -257,7 +288,7 @@ public class Main {
                 }
                 case 2 -> {
                     service.listarFuncionarios().forEach(f ->
-                            System.out.println("[\\uD83D\\uDCB8] ID: " + f.getId() + " | Nome: " + f.getNome() + " | Cargo: " + f.getCargo()));
+                            System.out.println("[\uD83D\uDC64] ID: " + f.getId() + " | Nome: " + f.getNome() + " | Cargo: " + f.getCargo()));
                 }
             }
         } while (op != 0);

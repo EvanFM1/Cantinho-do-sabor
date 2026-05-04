@@ -2,8 +2,7 @@ package org.example.repository;
 
 import jakarta.persistence.EntityManager;
 import org.example.entity.FuncionarioEntity;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class FuncionarioRepository {
 
