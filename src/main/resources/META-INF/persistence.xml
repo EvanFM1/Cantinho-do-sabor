@@ -10,6 +10,7 @@
         <class>org.example.entity.CategoriaEntity</class>
         <class>org.example.entity.ClienteEntity</class>
         <class>org.example.entity.FuncionarioEntity</class>
+        <class>org.example.entity.ItemPedidoEntity</class>
         <class>org.example.entity.PedidoEntity</class>
         <class>org.example.entity.ProdutoEntity</class>
         <class>org.example.entity.VendaEntity</class>
@@ -31,7 +32,7 @@
             <property name="hibernate.format_sql" value="true"/>
 
             <!-- Flyway controla o banco -->
-            <property name="hibernate.hbm2ddl.auto" value="validate"/>
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
 
         </properties>
     </persistence-unit>
