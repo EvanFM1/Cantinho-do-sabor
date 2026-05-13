@@ -6,6 +6,7 @@ import org.example.entity.ItemPedidoEntity;
 import org.example.entity.PedidoEntity;
 import org.example.entity.ProdutoEntity;
 import org.example.repository.ItemPedidoRepository;
+import java.math.BigDecimal;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public class ItemPedidoService {
         this.itemPedidoRepository = new ItemPedidoRepository(entityManager);
     }
 
-    public void adicionarItem(Long pedidoId, Long produtoId, Integer quantidade) {
+    public void adicionarItem(Long pedidoId, Long produtoId, BigDecimal quantidade) {
         EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
@@ -28,16 +29,17 @@ public class ItemPedidoService {
             PedidoEntity pedido = entityManager.find(PedidoEntity.class, pedidoId);
             ProdutoEntity produto = entityManager.find(ProdutoEntity.class, produtoId);
 
-            if (pedido == null) throw new RuntimeException("Pedido não encontrado!");
-            if (produto == null) throw new RuntimeException("Produto não encontrado!");
-            if (!"ABERTO".equals(pedido.getStatus())) throw new RuntimeException("Pedido não está aberto!");
+            BigDecimal estoqueAtual = produto.getEstoque();
+            if (quantidade.compareTo(estoqueAtual) > 0) {
+                throw new RuntimeException("Estoque insuficiente! Disponível: " + estoqueAtual);
+            }
 
             // CÁLCULO AUTOMÁTICO: Pega o preço direto do cadastro do produto
             ItemPedidoEntity item = new ItemPedidoEntity();
             item.setPedido(pedido);
             item.setProduto(produto);
             item.setQuantidade(quantidade);
-            item.setPrecoUnitario(produto.getPreco()); // Aqui o sistema "puxa" o valor sozinho
+            item.setPrecoUnitario(produto.getPreco());
 
             itemPedidoRepository.salvar(item);
 

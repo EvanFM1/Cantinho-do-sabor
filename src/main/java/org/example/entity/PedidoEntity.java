@@ -2,6 +2,7 @@ package org.example.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -27,7 +28,7 @@ public class PedidoEntity {
     private FuncionarioEntity funcionario;
 
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<ItemPedidoEntity> itens;
+    private List<ItemPedidoEntity> itens = new ArrayList<>();
 
     // Getters e Setters
     public Long getId() {

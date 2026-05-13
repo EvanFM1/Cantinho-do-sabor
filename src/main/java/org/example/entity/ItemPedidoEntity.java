@@ -19,10 +19,10 @@ public class ItemPedidoEntity {
     @JoinColumn(name = "produto_id", nullable = false)
     private ProdutoEntity produto;
 
-    @Column(nullable = false)
-    private Integer quantidade;
+    @Column(name = "quantidade", precision = 10, scale = 3, nullable = false)
+    private BigDecimal quantidade;
 
-    @Column(name = "preco_unitario", nullable = false)
+    @Column(name = "preco_unitario", precision = 38, scale = 2)
     private BigDecimal precoUnitario;
 
     // Getters e Setters
@@ -35,8 +35,8 @@ public class ItemPedidoEntity {
     public ProdutoEntity getProduto() { return produto; }
     public void setProduto(ProdutoEntity produto) { this.produto = produto; }
 
-    public Integer getQuantidade() { return quantidade; }
-    public void setQuantidade(Integer quantidade) { this.quantidade = quantidade; }
+    public BigDecimal getQuantidade() { return quantidade; }
+    public void setQuantidade(BigDecimal quantidade) { this.quantidade = quantidade; }
 
     public BigDecimal getPrecoUnitario() { return precoUnitario; }
     public void setPrecoUnitario(BigDecimal precoUnitario) { this.precoUnitario = precoUnitario; }

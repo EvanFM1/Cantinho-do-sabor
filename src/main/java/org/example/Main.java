@@ -13,7 +13,6 @@ public class Main {
 
     public static void main(String[] args) {
 
-        // Flyway - Ajustado para o banco sorveteria
         Flyway flyway = Flyway.configure()
                 .dataSource("jdbc:postgresql://localhost:5432/sorveteria", "nick", "nicki12072007")
                 .locations("classpath:db/migration")
@@ -28,11 +27,9 @@ public class Main {
             System.out.println("⚠️ Aviso Flyway: " + e.getMessage());
         }
 
-        // JPA Ajustado para o persistence unit da sorveteria
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("SorveteriaPU");
         EntityManager em = emf.createEntityManager();
 
-        // Services da Sorveteria
         UsuarioService usuarioService = new UsuarioService(em);
         ClienteService clienteService = new ClienteService(em);
         CategoriaService categoriaService = new CategoriaService(em);
@@ -73,17 +70,16 @@ public class Main {
                         menuFuncionarios(funcionarioService);
                     }
                     case 6 -> menuPedidos(pedidoService, itemPedidoService);
-                    case 7 -> menuVendas(vendaService);
+                    case 7 -> menuVendas(vendaService, pedidoService);
                 }
             } catch (Exception e) {
-                System.out.println("🚫 " + e.getMessage());
+                System.out.println("🚫 Erro: " + e.getMessage());
             }
         } while (op != 0);
         em.close();
         emf.close();
     }
 
-    // -=-=-=-=-=-=- LOGIN -=-=-=-=-=-=-
     private static void telaLogin(UsuarioService service) {
         while (true) {
             try {
@@ -102,7 +98,6 @@ public class Main {
         }
     }
 
-    // -=-=-=-=-=-=- CLIENTES -=-=-=-=-=-=-
     private static void menuClientes(ClienteService service) {
         int op;
         do {
@@ -128,7 +123,6 @@ public class Main {
         } while (op != 0);
     }
 
-    // -=-=-=-=-=-=- CATEGORIAS -=-=-=-=-=-=-
     private static void menuCategorias(CategoriaService service) {
         int op;
         do {
@@ -147,12 +141,11 @@ public class Main {
                     service.criarCategoria(cat);
                     System.out.println("✅ Categoria criada!");
                 }
-                case 2 -> service.listarCategorias().forEach(c -> System.out.println("ID: " + c.getId() + " | Tipo: " + c.getNome() + " | Valor Base: R$" + c.getValor()));
+                case 2 -> service.listarCategorias().forEach(c -> System.out.println("ID: " + c.getId() + " | Tipo: " + c.getNome()));
             }
         } while (op != 0);
     }
 
-    // -=-=-=-=-=-=- PRODUTOS -=-=-=-=-=-=-
     private static void menuProdutos(ProdutoService service) {
         int op;
         do {
@@ -166,9 +159,8 @@ public class Main {
                     ProdutoEntity p = new ProdutoEntity();
                     System.out.print("Nome do Sabor: ");
                     p.setNome(scanner.nextLine());
-                    System.out.print("Preço: ");
-                    p.setPreco(scanner.nextBigDecimal());
-                    scanner.nextLine();
+                    System.out.print("Preço (R$): ");
+                    p.setPreco(new BigDecimal(scanner.nextLine().replace(",", ".")));
                     System.out.print("Descrição: ");
                     p.setDescricao(scanner.nextLine());
                     System.out.print("ID da Categoria: ");
@@ -181,7 +173,6 @@ public class Main {
         } while (op != 0);
     }
 
-    // -=-=-=-=-=-=- ESTOQUE -=-=-=-=-=-=-
     private static void menuEstoque(ProdutoService service) {
         int op;
         do {
@@ -193,30 +184,26 @@ public class Main {
             op = Integer.parseInt(scanner.nextLine());
             switch (op) {
                 case 1 -> {
-                    service.listarProdutos().forEach(p -> System.out.println("[🍧] ID: " + p.getId() + " | Nome: " + p.getNome() + " | Estoque: " + p.getEstoque()));
                     System.out.print("ID do produto: ");
                     Long id = Long.parseLong(scanner.nextLine());
-                    System.out.print("Quantidade a adicionar: ");
-                    int qtd = Integer.parseInt(scanner.nextLine());
+                    System.out.print("Quantidade a adicionar (Ex: 10 ou 0.500): ");
+                    BigDecimal qtd = new BigDecimal(scanner.nextLine().replace(",", "."));
                     service.adicionarEstoque(id, qtd);
                     System.out.println("✅ Estoque atualizado!");
                 }
                 case 2 -> {
-                    service.listarProdutos().forEach(p -> System.out.println("[🍧] ID: " + p.getId() + " | Nome: " + p.getNome() + " | Estoque: " + p.getEstoque()));
                     System.out.print("ID do produto: ");
                     Long id = Long.parseLong(scanner.nextLine());
                     System.out.print("Quantidade a remover: ");
-                    int qtd = Integer.parseInt(scanner.nextLine());
+                    BigDecimal qtd = new BigDecimal(scanner.nextLine().replace(",", "."));
                     service.removerEstoque(id, qtd);
                     System.out.println("✅ Estoque atualizado!");
                 }
-                case 3 -> service.listarProdutos().forEach(p -> System.out.println("[🍧] ID: " + p.getId() + " | Nome: " + p.getNome() + " | Preço: " + p.getPreco() + " | Estoque: " + p.getEstoque()));
-                case 0 -> System.out.println("Voltando...");
+                case 3 -> service.listarProdutos().forEach(p -> System.out.println("[🍧] ID: " + p.getId() + " | Nome: " + p.getNome() + " | Estoque: " + p.getEstoque()));
             }
         } while (op != 0);
     }
 
-    // -=-=-=-=-=-=- FUNCIONÁRIOS -=-=-=-=-=-=-
     private static void menuFuncionarios(FuncionarioService service) {
         int op;
         do {
@@ -237,12 +224,11 @@ public class Main {
                     service.criarFuncionario(f);
                     System.out.println("✅ Funcionário cadastrado!");
                 }
-                case 2 -> service.listarFuncionarios().forEach(f -> System.out.println("[👤] ID: " + f.getId() + " | Nome: " + f.getNome() + " | Cargo: " + f.getCargo()));
+                case 2 -> service.listarFuncionarios().forEach(f -> System.out.println("[👤] ID: " + f.getId() + " | Nome: " + f.getNome()));
             }
         } while (op != 0);
     }
 
-    // -=-=-=-=-=-=- PEDIDOS -=-=-=-=-=-=-
     private static void menuPedidos(PedidoService service, ItemPedidoService itemService) {
         int op;
         do {
@@ -263,23 +249,17 @@ public class Main {
                     System.out.print("ID do Funcionário: ");
                     Long funcId = Long.parseLong(scanner.nextLine());
                     service.criarPedido(cliId, funcId);
-                    System.out.println("🍦 Pedido aberto! Agora adicione os itens (opção 4).");
+                    System.out.println("🍦 Pedido aberto!");
                 }
                 case 2 -> service.listarPedidosPorStatus("ABERTO").forEach(p ->
-                        System.out.println("Pedido ID: " + p.getId() + " | Cliente: " + p.getCliente().getNome() + " | Status: " + p.getStatus()));
-                case 3 -> {
-                    System.out.print("ID do Pedido: ");
-                    Long id = Long.parseLong(scanner.nextLine());
-                    service.cancelarPedido(id);
-                    System.out.println("🚫 Pedido cancelado.");
-                }
+                        System.out.println("Pedido ID: " + p.getId() + " | Cliente: " + p.getCliente().getNome()));
                 case 4 -> {
                     System.out.print("ID do Pedido: ");
                     Long pId = Long.parseLong(scanner.nextLine());
-                    System.out.print("ID do Produto (Sabor): ");
+                    System.out.print("ID do Produto: ");
                     Long prodId = Long.parseLong(scanner.nextLine());
-                    System.out.print("Quantidade: ");
-                    int qtd = Integer.parseInt(scanner.nextLine());
+                    System.out.print("Quantidade (Ex: 1 ou 0.550): ");
+                    BigDecimal qtd = new BigDecimal(scanner.nextLine().replace(",", "."));
                     itemService.adicionarItem(pId, prodId, qtd);
                     System.out.println("✅ Item adicionado!");
                 }
@@ -287,14 +267,13 @@ public class Main {
                     System.out.print("ID do Pedido: ");
                     Long pId = Long.parseLong(scanner.nextLine());
                     itemService.listarItensPorPedido(pId).forEach(i ->
-                            System.out.println("- " + i.getProduto().getNome() + " | Qtd: " + i.getQuantidade() + " | Unit: R$" + i.getPrecoUnitario()));
+                            System.out.println("- " + i.getProduto().getNome() + " | Qtd: " + i.getQuantidade()));
                 }
             }
         } while (op != 0);
     }
 
-    // -=-=-=-=-=-=- VENDAS (FINANCEIRO) -=-=-=-=-=-=-
-    private static void menuVendas(VendaService service) {
+    private static void menuVendas(VendaService service, PedidoService pedidoService) {
         int op;
         do {
             System.out.println("\n--- VENDAS (CAIXA) ---");
@@ -306,19 +285,35 @@ public class Main {
 
             switch (op) {
                 case 1 -> {
-                    System.out.print("ID do Pedido: ");
-                    Long pedidoId = Long.parseLong(scanner.nextLine());
-                    System.out.print("Valor Total: ");
-                    BigDecimal valor = new BigDecimal(scanner.nextLine());
-                    System.out.print("Método (Pix/Cartão/Dinheiro): ");
-                    String metodo = scanner.nextLine();
+                    try {
+                        System.out.print("ID do Pedido para fechar: ");
+                        Long pedidoId = Long.parseLong(scanner.nextLine());
 
-                    VendaEntity v = service.criarVenda(pedidoId, valor, metodo);
-                    service.finalizarVenda(v.getId());
-                    System.out.println("💰 Venda finalizada e paga! Estoque atualizado.");
+                        // MOSTRAR VALOR ANTES DE CONFIRMAR
+                        BigDecimal valorTotal = pedidoService.calcularTotal(pedidoId);
+                        System.out.printf("\n💰 VALOR TOTAL DO PEDIDO: R$ %.2f\n", valorTotal);
+
+                        if (valorTotal.compareTo(BigDecimal.ZERO) <= 0) {
+                            System.out.println("⚠️ Este pedido está vazio ou o valor é zero!");
+                            break;
+                        }
+
+                        System.out.print("Confirmar finalização da venda? (S/N): ");
+                        if (scanner.nextLine().equalsIgnoreCase("S")) {
+                            System.out.print("Método (Pix/Cartão/Dinheiro): ");
+                            String metodo = scanner.nextLine();
+
+                            service.criarVenda(pedidoId, metodo);
+                            System.out.println("✅ Venda finalizada e estoque atualizado!");
+                        } else {
+                            System.out.println("❌ Venda cancelada.");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("🚫 Erro ao finalizar venda: " + e.getMessage());
+                    }
                 }
                 case 2 -> service.listarVendas().forEach(v ->
-                        System.out.println("Venda ID: " + v.getId() + " | Valor: R$" + v.getValorTotal() + " | Status: " + v.getStatus()));
+                        System.out.println("Venda ID: " + v.getId() + " | Valor: R$" + v.getValorTotal() + " | Pagamento: " + v.getMetodoPagamento()));
             }
         } while (op != 0);
     }

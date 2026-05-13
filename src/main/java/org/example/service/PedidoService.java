@@ -3,8 +3,10 @@ package org.example.service;
 import jakarta.persistence.*;
 import org.example.entity.ClienteEntity;
 import org.example.entity.FuncionarioEntity;
+import org.example.entity.ItemPedidoEntity;
 import org.example.entity.PedidoEntity;
 import org.example.repository.PedidoRepository;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -55,6 +57,25 @@ public class PedidoService {
             if (transaction.isActive()) transaction.rollback();
             throw e;
         }
+    }
+
+    public BigDecimal calcularTotal(Long pedidoId) {
+        PedidoEntity pedido = entityManager.find(PedidoEntity.class, pedidoId);
+
+        if (pedido == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal total = BigDecimal.ZERO;
+
+        entityManager.refresh(pedido);
+
+        for (ItemPedidoEntity item : pedido.getItens()) {
+            // Matemática: Quantidade * Preço Unitário
+            BigDecimal subtotal = item.getQuantidade().multiply(item.getPrecoUnitario());
+            total = total.add(subtotal);
+        }
+        return total;
     }
 
     public void cancelarPedido(Long pedidoId) {
