@@ -23,10 +23,6 @@ public class PedidoEntity {
     @JoinColumn(name = "cliente_id", nullable = false)
     private ClienteEntity cliente;
 
-    @ManyToOne
-    @JoinColumn(name = "funcionario_id", nullable = false)
-    private FuncionarioEntity funcionario;
-
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<ItemPedidoEntity> itens = new ArrayList<>();
 
@@ -61,14 +57,6 @@ public class PedidoEntity {
 
     public void setCliente(ClienteEntity cliente) {
         this.cliente = cliente;
-    }
-
-    public FuncionarioEntity getFuncionario() {
-        return funcionario;
-    }
-
-    public void setFuncionario(FuncionarioEntity funcionario) {
-        this.funcionario = funcionario;
     }
 
     public List<ItemPedidoEntity> getItens() { return itens; }
