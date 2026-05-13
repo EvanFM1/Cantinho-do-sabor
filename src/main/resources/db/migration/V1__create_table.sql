@@ -1,3 +1,13 @@
+CREATE SCHEMA IF NOT EXISTS public;
+SET search_path TO public;
+
+CREATE TABLE usuarios (
+  id BIGSERIAL PRIMARY KEY,
+  login VARCHAR(50) NOT NULL UNIQUE,
+  senha VARCHAR(100) NOT NULL,
+  perfil VARCHAR(20) NOT NULL
+);
+
 CREATE TABLE categorias (
    id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(50) NOT NULL,
@@ -38,6 +48,16 @@ CREATE TABLE produtos (
   estoque INT NOT NULL DEFAULT 0,
   fk_categoria_id BIGINT NOT NULL,
   CONSTRAINT fk_produto_categoria FOREIGN KEY (fk_categoria_id) REFERENCES categorias (id)
+);
+
+CREATE TABLE itens_pedido (
+    id BIGSERIAL PRIMARY KEY,
+    pedido_id BIGINT NOT NULL,
+    produto_id BIGINT NOT NULL,
+    quantidade INT NOT NULL,
+    preco_unitario DECIMAL(10, 2) NOT NULL,
+    CONSTRAINT fk_item_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos (id),
+    CONSTRAINT fk_item_produto FOREIGN KEY (produto_id) REFERENCES produtos (id)
 );
 
 CREATE TABLE vendas (

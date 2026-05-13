@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import org.example.entity.PedidoEntity;
 import org.example.entity.VendaEntity;
 import org.example.repository.VendaRepository;
+import org.example.entity.ItemPedidoEntity;
+import org.example.entity.ProdutoEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,6 +31,14 @@ public class VendaService {
                 throw new RuntimeException("Pedido não encontrado!");
             }
 
+            if ("CANCELADO".equalsIgnoreCase(pedido.getStatus())) {
+                throw new RuntimeException("ERRO: Não é possível vender um pedido que foi CANCELADO!");
+            }
+
+            if ("PAGO".equalsIgnoreCase(pedido.getStatus()) || "FINALIZADO".equalsIgnoreCase(pedido.getStatus())) {
+                throw new RuntimeException("ERRO: Este pedido já foi pago!");
+            }
+
             VendaEntity venda = new VendaEntity();
             venda.setPedido(pedido);
             venda.setValorTotal(valorTotal);
@@ -41,7 +51,7 @@ public class VendaService {
             transaction.commit();
             return venda;
         } catch (Exception e) {
-            transaction.rollback();
+            if (transaction.isActive()) transaction.rollback();
             throw e;
         }
     }
@@ -50,25 +60,41 @@ public class VendaService {
         EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
+
             VendaEntity venda = vendaRepository.buscarPorId(vendaId)
                     .orElseThrow(() -> new RuntimeException("Venda não encontrada!"));
 
             if ("PAGA".equals(venda.getStatus())) {
                 throw new RuntimeException("Esta venda já foi finalizada!");
             }
+            PedidoEntity pedido = venda.getPedido();
 
+            // Iteramos sobre os itens do pedido (certifique-se de ter a List<ItemPedidoEntity> no PedidoEntity)
+            if (pedido.getItens() != null) {
+                for (ItemPedidoEntity item : pedido.getItens()) {
+                    ProdutoEntity produto = item.getProduto();
+                    int quantidadeVendida = item.getQuantidade();
+
+                    if (produto.getEstoque() < quantidadeVendida) {
+                        throw new RuntimeException("Estoque insuficiente para o produto: " + produto.getNome());
+                    }
+
+                    // Subtrai do estoque
+                    produto.setEstoque(produto.getEstoque() - quantidadeVendida);
+
+                    // O Hibernate entenderá que o objeto 'produto' foi alterado
+                    // e fará o UPDATE automaticamente ao comitar a transação.
+                }
+            }
             venda.setStatus("PAGA");
             venda.setDataVenda(LocalDateTime.now());
 
-            // Aqui você também poderia atualizar o status do Pedido para "FINALIZADO"
             venda.getPedido().setStatus("PAGO");
-
-            vendaRepository.salvar(venda);
 
             transaction.commit();
             return venda;
         } catch (Exception e) {
-            transaction.rollback();
+            if (transaction.isActive()) transaction.rollback();
             throw e;
         }
     }
@@ -98,7 +124,7 @@ public class VendaService {
             vendaRepository.deletar(venda);
             transaction.commit();
         } catch (Exception e) {
-            transaction.rollback();
+            if (transaction.isActive()) transaction.rollback();
             throw e;
         }
     }

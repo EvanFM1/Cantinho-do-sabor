@@ -2,6 +2,7 @@ package org.example.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "pedidos")
@@ -24,6 +25,9 @@ public class PedidoEntity {
     @ManyToOne
     @JoinColumn(name = "funcionario_id", nullable = false)
     private FuncionarioEntity funcionario;
+
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<ItemPedidoEntity> itens;
 
     // Getters e Setters
     public Long getId() {
@@ -65,4 +69,8 @@ public class PedidoEntity {
     public void setFuncionario(FuncionarioEntity funcionario) {
         this.funcionario = funcionario;
     }
+
+    public List<ItemPedidoEntity> getItens() { return itens; }
+
+    public void setItens(List<ItemPedidoEntity> itens) { this.itens = itens; }
 }
