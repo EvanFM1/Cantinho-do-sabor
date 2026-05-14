@@ -1,5 +1,6 @@
 package org.example.ui;
 
+import java.awt.*;
 import java.util.function.Consumer;
 import javax.swing.*;
 
@@ -36,9 +37,9 @@ public final class UI {
      * @param <T> - Tipo do componente pai
      * @return T - Componente pai com filhos adicionados
      */
-    public static <T extends JComponent> T children(T parent, JComponent... children) {
+    public static <T extends JComponent> T children(T parent, Component... children) {
         if (children != null) {
-            for (JComponent child : children) {
+            for (Component child : children) {
                 parent.add(child);
             }
         }
@@ -72,7 +73,7 @@ public final class UI {
      * @param children - Componentes filhos
      * @return JPanel
      */
-    public static JPanel panel(Consumer<JPanel> config, JComponent... children) {
+    public static JPanel panel(Consumer<JPanel> config, Component... children) {
         JPanel panel = panel(config);
         return children(panel, children);
     }
