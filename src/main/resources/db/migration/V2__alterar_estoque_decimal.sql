@@ -1,0 +1,3 @@
+ALTER TABLE produtos
+ALTER COLUMN estoque TYPE NUMERIC(10,3)
+USING estoque::NUMERIC(10,3);

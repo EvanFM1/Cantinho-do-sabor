@@ -22,29 +22,21 @@ public class ProdutoService {
         EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
-
             if (produto.getNome() == null || produto.getNome().isEmpty()) {
                 throw new RuntimeException("Nome do produto é obrigatório!");
             }
-
             if (produto.getPreco() == null || produto.getPreco().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException("Preço deve ser maior que zero!");
             }
-
             CategoriaEntity categoria = entityManager.find(CategoriaEntity.class, categoriaId);
-
-            if (categoria == null) {
-                throw new RuntimeException("Categoria não encontrada!");
-            }
+            if (categoria == null) throw new RuntimeException("Categoria não encontrada!");
 
             produto.setCategoria(categoria);
             produtoRepository.salvar(produto);
-
             transaction.commit();
             return produto;
-
         } catch (Exception e) {
-            transaction.rollback();
+            if (transaction.isActive()) transaction.rollback();
             throw e;
         }
     }
@@ -58,31 +50,49 @@ public class ProdutoService {
         return produtoRepository.listarTodos();
     }
 
-    public ProdutoEntity atualizarProduto(Long id, ProdutoEntity dadosAtualizados, Long categoriaId) {
+    public void adicionarEstoque(Long id, BigDecimal quantidade) {
         EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
-
             ProdutoEntity produto = produtoRepository.buscarPorId(id)
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
 
-            produto.setNome(dadosAtualizados.getNome());
-            produto.setDescricao(dadosAtualizados.getDescricao());
-
-            if (categoriaId != null) {
-                CategoriaEntity categoria = entityManager.find(CategoriaEntity.class, categoriaId);
-                if (categoria == null) {
-                    throw new RuntimeException("Categoria não encontrada!");
-                }
-                produto.setCategoria(categoria);
+            if (quantidade.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new RuntimeException("Quantidade deve ser maior que zero!");
             }
 
-            ProdutoEntity atualizado = produtoRepository.salvar(produto);
-            transaction.commit();
-            return atualizado;
+            // Soma usando BigDecimal
+            produto.setEstoque(produto.getEstoque().add(quantidade));
 
+            transaction.commit();
         } catch (Exception e) {
-            transaction.rollback();
+            if (transaction.isActive()) transaction.rollback();
+            throw e;
+        }
+    }
+
+    public void removerEstoque(Long id, BigDecimal quantidade) {
+        EntityTransaction transaction = entityManager.getTransaction();
+        try {
+            transaction.begin();
+            ProdutoEntity produto = produtoRepository.buscarPorId(id)
+                    .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
+
+            if (quantidade.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new RuntimeException("Quantidade deve ser positiva!");
+            }
+
+            // Comparação: estoque < quantidade
+            if (produto.getEstoque().compareTo(quantidade) < 0) {
+                throw new RuntimeException("Estoque insuficiente!");
+            }
+
+            // Subtração usando BigDecimal
+            produto.setEstoque(produto.getEstoque().subtract(quantidade));
+
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction.isActive()) transaction.rollback();
             throw e;
         }
     }
@@ -93,54 +103,10 @@ public class ProdutoService {
             transaction.begin();
             ProdutoEntity produto = produtoRepository.buscarPorId(id)
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
-
             produtoRepository.deletar(produto);
             transaction.commit();
         } catch (Exception e) {
-            transaction.rollback();
-            throw e;
-        }
-    }
-
-    public void adicionarEstoque(Long id, int quantidade) {
-        EntityTransaction transaction = entityManager.getTransaction();
-
-        try {
-            transaction.begin();
-            ProdutoEntity produto = produtoRepository.buscarPorId(id)
-                            .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
-
-            if (quantidade <= 0) {
-                throw new RuntimeException("Quantidade deve ser maior que zero!");
-            }
-            produto.setEstoque(produto.getEstoque() + quantidade);
-            produtoRepository.salvar(produto);
-            transaction.commit();
-        } catch (Exception e) {
-            transaction.rollback();
-            throw e;
-        }
-    }
-
-    public void removerEstoque(Long id, int quantidade) {
-        EntityTransaction transaction = entityManager.getTransaction();
-
-        try {
-            transaction.begin();
-            ProdutoEntity produto = produtoRepository.buscarPorId(id)
-                    .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
-
-            if (quantidade < 0) {
-                throw new RuntimeException("Quantidade deve ser maior que zero!");
-            }
-            if (produto.getEstoque() < quantidade) {
-                throw new RuntimeException("Estoque insuficiente!");
-            }
-            produto.setEstoque(produto.getEstoque() - quantidade);
-            produtoRepository.salvar(produto);
-            transaction.commit();
-        } catch (Exception e) {
-            transaction.rollback();
+            if (transaction.isActive()) transaction.rollback();
             throw e;
         }
     }

@@ -2,9 +2,10 @@ package org.example.service;
 
 import jakarta.persistence.*;
 import org.example.entity.ClienteEntity;
-import org.example.entity.FuncionarioEntity;
+import org.example.entity.ItemPedidoEntity;
 import org.example.entity.PedidoEntity;
 import org.example.repository.PedidoRepository;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,20 +31,17 @@ public class PedidoService {
         return entityManager.createQuery(jpql, PedidoEntity.class).getResultList();
     }
 
-    public PedidoEntity criarPedido(Long clienteId, Long funcionarioId) {
+    public PedidoEntity criarPedido(Long clienteId) {
         EntityTransaction transaction = entityManager.getTransaction();
         try {
             transaction.begin();
 
             ClienteEntity cliente = entityManager.find(ClienteEntity.class, clienteId);
-            FuncionarioEntity funcionario = entityManager.find(FuncionarioEntity.class, funcionarioId);
 
             if (cliente == null) throw new RuntimeException("Cliente não encontrado!");
-            if (funcionario == null) throw new RuntimeException("Funcionário não encontrado!");
 
             PedidoEntity pedido = new PedidoEntity();
             pedido.setCliente(cliente);
-            pedido.setFuncionario(funcionario);
             pedido.setDataHora(LocalDateTime.now());
             pedido.setStatus("ABERTO");
 
@@ -55,6 +53,25 @@ public class PedidoService {
             if (transaction.isActive()) transaction.rollback();
             throw e;
         }
+    }
+
+    public BigDecimal calcularTotal(Long pedidoId) {
+        PedidoEntity pedido = entityManager.find(PedidoEntity.class, pedidoId);
+
+        if (pedido == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal total = BigDecimal.ZERO;
+
+        entityManager.refresh(pedido);
+
+        for (ItemPedidoEntity item : pedido.getItens()) {
+            // Matemática: Quantidade * Preço Unitário
+            BigDecimal subtotal = item.getQuantidade().multiply(item.getPrecoUnitario());
+            total = total.add(subtotal);
+        }
+        return total;
     }
 
     public void cancelarPedido(Long pedidoId) {
@@ -83,7 +100,6 @@ public class PedidoService {
     public PedidoEntity buscarCompleto(Long id) {
         String jpql = "SELECT p FROM PedidoEntity p " +
                 "JOIN FETCH p.cliente " +
-                "JOIN FETCH p.funcionario " +
                 "WHERE p.id = :id";
         try {
             return entityManager.createQuery(jpql, PedidoEntity.class)
