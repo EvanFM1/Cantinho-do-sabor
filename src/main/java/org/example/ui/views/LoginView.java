@@ -37,9 +37,7 @@ public class LoginView extends JFrame {
         setContentPane(rootPanel);
 
         /*
-         * FORÇA O SWING A RENDERIZAR
-         * O BOTÃO COM O ESTILO CERTO
-         * DESDE O INÍCIO.
+         * Swing VAI iniciar o botão com o estilo certo
          */
         SwingUtilities.updateComponentTreeUI(this);
         setVisible(true);
@@ -63,7 +61,7 @@ public class LoginView extends JFrame {
      */
     private void initComponents() {
         /*
-         * TÍTULO
+         * Título
          */
         titleLabel = UI.label(
                 "Cantinho do Sabor",
@@ -84,7 +82,7 @@ public class LoginView extends JFrame {
         );
 
         /*
-         * LABELS
+         * Labels
          */
         loginLabel = UI.label(
                 "Login",
@@ -103,7 +101,7 @@ public class LoginView extends JFrame {
         );
 
         /*
-         * CAMPOS
+         * Campos
          */
         loginField = UI.textField(field -> {
             field.setFont(Theme.TEXT_FONT);
@@ -121,9 +119,6 @@ public class LoginView extends JFrame {
         );
         passwordField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        /*
-         * BOTÃO
-         */
         loginButton = UI.button(
                 "Entrar",
                 button -> {
@@ -131,14 +126,9 @@ public class LoginView extends JFrame {
                     button.setBackground(Theme.PRIMARY);
 
                     /*
-                     * GARANTE TEXTO BRANCO
+                     * Texto branco garantido
                      */
                     button.setForeground(new Color(255, 255, 255));
-
-                    /*
-                     * IMPEDE LOOK AND FEEL
-                     * DE SOBRESCREVER COR
-                     */
                     button.setUI(new javax.swing.plaf.basic.BasicButtonUI());
                     button.setOpaque(true);
                     button.setContentAreaFilled(true);
@@ -156,16 +146,12 @@ public class LoginView extends JFrame {
                     );
 
                     /*
-                     * COMEÇA HABILITADO
-                     * PRA NÃO BUGGAR O LAF
+                     * Começa habilitado pra não bugar o look and feel
                      */
                     button.setEnabled(true);
                 }
         );
 
-        /*
-         * CARD
-         */
         cardPanel = UI.panel(
                 panel -> {
                     panel.setLayout(
@@ -203,9 +189,6 @@ public class LoginView extends JFrame {
                 loginButton
         );
 
-        /*
-         * ROOT
-         */
         rootPanel = UI.panel(
                 panel -> {
                     panel.setLayout(
@@ -218,10 +201,6 @@ public class LoginView extends JFrame {
                 },
                 cardPanel
         );
-
-        /*
-         * ESTADO INICIAL
-         */
         validateFields();
     }
 
@@ -230,7 +209,7 @@ public class LoginView extends JFrame {
      */
     private void initEvents() {
         /*
-         * HOVER BOTÃO
+         * Hover no botão
          */
         Events.mouse(loginButton, mouse -> {
             mouse.onEntered(event -> {
@@ -247,14 +226,14 @@ public class LoginView extends JFrame {
         });
 
         /*
-         * ENTER
+         * Enter
          */
         Events.keyBinder(rootPanel, key -> {
             key.on("ENTER", this::performLogin);
         });
 
         /*
-         * VALIDAÇÃO
+         * Validação
          */
         Events.text(
                 loginField,
@@ -267,7 +246,7 @@ public class LoginView extends JFrame {
         );
 
         /*
-         * CLICK
+         * Clique, sim
          */
         loginButton.addActionListener(
                 event -> performLogin()
@@ -303,7 +282,7 @@ public class LoginView extends JFrame {
      */
     private void performLogin() {
         /*
-         * IMPEDE DUPLO CLICK
+         * Impede duplo clique
          */
         boolean loading =
                 Boolean.TRUE.equals(
@@ -313,17 +292,15 @@ public class LoginView extends JFrame {
         if (loading) {
             return;
         }
-
         String login =
                 loginField.getText().trim();
-
         String senha =
                 new String(
                         passwordField.getPassword()
                 );
 
         /*
-         * VALIDAÇÃO
+         * Validação
          */
         if (login.isBlank() || senha.isBlank()) {
             JOptionPane.showMessageDialog(
@@ -336,7 +313,7 @@ public class LoginView extends JFrame {
         }
 
         /*
-         * LOADING
+         * Loading
          */
         loginButton.putClientProperty("loading", true);
         loginButton.setText("Entrando...");
@@ -345,7 +322,7 @@ public class LoginView extends JFrame {
         );
 
         /*
-         * LOGIN ASSÍNCRONO
+         * Login assíncrono
          */
         Async.compute(
                 () -> usuarioService.login(login, senha),
@@ -373,16 +350,18 @@ public class LoginView extends JFrame {
         dispose();
 
         /*
-         * TODO:
-         * DashboardView
+         * Abre meu dashboard querido
          */
+        SwingUtilities.invokeLater(() -> {
+            new DashboardView().setVisible(true);
+        });
     }
 
     private void onLoginError(
             Throwable throwable
     ) {
         /*
-         * REMOVE LOADING
+         * Remove loading
          */
         loginButton.putClientProperty(
                 "loading",
