@@ -23,21 +23,12 @@ CREATE TABLE clientes (
   telefone VARCHAR(30)
 );
 
-CREATE TABLE funcionarios (
-  id BIGSERIAL PRIMARY KEY,
-  nome VARCHAR(255) NOT NULL,
-  cargo VARCHAR(100) NOT NULL,
-  telefone VARCHAR(30) NOT NULL
-);
-
 CREATE TABLE pedidos (
   id BIGSERIAL PRIMARY KEY,
   data_hora TIMESTAMP NOT NULL,
   status VARCHAR(20) NOT NULL,
   cliente_id BIGINT NOT NULL,
-  funcionario_id BIGINT NOT NULL,
-  CONSTRAINT fk_pedido_cliente FOREIGN KEY (cliente_id) REFERENCES clientes (id),
-  CONSTRAINT fk_pedido_funcionario FOREIGN KEY (funcionario_id) REFERENCES funcionarios (id)
+  CONSTRAINT fk_pedido_cliente FOREIGN KEY (cliente_id) REFERENCES clientes (id)
 );
 
 CREATE TABLE produtos (

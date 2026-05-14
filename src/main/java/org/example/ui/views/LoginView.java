@@ -1,6 +1,9 @@
 package org.example.ui.views;
 
 import org.example.entity.UsuarioEntity;
+import org.example.service.ClienteService;
+import org.example.service.PedidoService;
+import org.example.service.ProdutoService;
 import org.example.service.UsuarioService;
 import org.example.ui.Async;
 import org.example.ui.Events;
@@ -11,319 +14,119 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
-/**
- * Tela de login principal do sistema.
- */
 public class LoginView extends JFrame {
     private final UsuarioService usuarioService;
+    private final ClienteService clienteService;
+    private final PedidoService pedidoService;
+    private final ProdutoService produtoService;
+
     private JPanel rootPanel;
     private JPanel cardPanel;
+
     private JLabel titleLabel;
     private JLabel subtitleLabel;
-    private JLabel loginLabel;
-    private JLabel passwordLabel;
+
     private JTextField loginField;
     private JPasswordField passwordField;
     private JButton loginButton;
 
-    /**
-     * Construtor principal.
-     */
-    public LoginView(UsuarioService usuarioService) {
+    public LoginView(
+            UsuarioService usuarioService,
+            ClienteService clienteService,
+            PedidoService pedidoService,
+            ProdutoService produtoService
+    ) {
         this.usuarioService = usuarioService;
+        this.clienteService = clienteService;
+        this.pedidoService = pedidoService;
+        this.produtoService = produtoService;
+
         configureFrame();
         initComponents();
         initEvents();
-        setContentPane(rootPanel);
 
-        /*
-         * Swing VAI iniciar o botão com o estilo certo
-         */
+        setContentPane(rootPanel);
         SwingUtilities.updateComponentTreeUI(this);
         setVisible(true);
     }
 
-    /**
-     * Configurações da janela.
-     */
     private void configureFrame() {
         setTitle("Cantinho do Sabor");
         setSize(1200, 700);
-        setMinimumSize(
-                new Dimension(900, 600)
-        );
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
-    /**
-     * Inicializa componentes.
-     */
     private void initComponents() {
-        /*
-         * Título
-         */
-        titleLabel = UI.label(
-                "Cantinho do Sabor",
-                label -> {
-                    label.setFont(Theme.TITLE_FONT);
-                    label.setForeground(Theme.PRIMARY);
-                    label.setAlignmentX(Component.CENTER_ALIGNMENT);
-                }
-        );
+        titleLabel = UI.label("Cantinho do Sabor", l -> {
+            l.setFont(Theme.TITLE_FONT);
+            l.setForeground(Theme.PRIMARY);
+            l.setAlignmentX(Component.CENTER_ALIGNMENT);
+        });
 
-        subtitleLabel = UI.label(
-                "Sistema de Gestão da Sorveteria",
-                label -> {
-                    label.setFont(Theme.TEXT_FONT);
-                    label.setForeground(Theme.PRIMARY_DARK);
-                    label.setAlignmentX(Component.CENTER_ALIGNMENT);
-                }
-        );
+        subtitleLabel = UI.label("Sistema de Gestão da Sorveteria", l -> {
+            l.setFont(Theme.TEXT_FONT);
+            l.setForeground(Theme.PRIMARY_DARK);
+            l.setAlignmentX(Component.CENTER_ALIGNMENT);
+        });
 
-        /*
-         * Labels
-         */
-        loginLabel = UI.label(
-                "Login",
-                label -> {
-                    label.setFont(Theme.LABEL_FONT);
-                    label.setAlignmentX(Component.CENTER_ALIGNMENT);
-                }
-        );
-
-        passwordLabel = UI.label(
-                "Senha",
-                label -> {
-                    label.setFont(Theme.LABEL_FONT);
-                    label.setAlignmentX(Component.CENTER_ALIGNMENT);
-                }
-        );
-
-        /*
-         * Campos
-         */
-        loginField = UI.textField(field -> {
-            field.setFont(Theme.TEXT_FONT);
-            field.setMaximumSize(
-                    new Dimension(Integer.MAX_VALUE, 42)
-            );
-
-            field.setAlignmentX(Component.CENTER_ALIGNMENT);
+        loginField = UI.textField(f -> {
+            f.setFont(Theme.TEXT_FONT);
+            f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
         });
 
         passwordField = new JPasswordField();
         passwordField.setFont(Theme.TEXT_FONT);
-        passwordField.setMaximumSize(
-                new Dimension(Integer.MAX_VALUE, 42)
-        );
-        passwordField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
 
-        loginButton = UI.button(
-                "Entrar",
-                button -> {
-                    button.setFont(Theme.BUTTON_FONT);
-                    button.setBackground(Theme.PRIMARY);
+        loginButton = UI.button("Entrar", b -> {
+            b.setFont(Theme.BUTTON_FONT);
+            b.setBackground(Theme.PRIMARY);
+            b.setForeground(Color.WHITE);
+            b.setFocusPainted(false);
+        });
 
-                    /*
-                     * Texto branco garantido
-                     */
-                    button.setForeground(new Color(255, 255, 255));
-                    button.setUI(new javax.swing.plaf.basic.BasicButtonUI());
-                    button.setOpaque(true);
-                    button.setContentAreaFilled(true);
-                    button.setBorderPainted(false);
-                    button.setFocusPainted(false);
-                    button.setFocusable(false);
-                    button.setCursor(
-                            new Cursor(Cursor.HAND_CURSOR)
-                    );
-
-                    button.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-                    button.setMaximumSize(
-                            new Dimension(Integer.MAX_VALUE, 48)
-                    );
-
-                    /*
-                     * Começa habilitado pra não bugar o look and feel
-                     */
-                    button.setEnabled(true);
-                }
-        );
-
-        cardPanel = UI.panel(
-                panel -> {
-                    panel.setLayout(
-                            new BoxLayout(panel, BoxLayout.Y_AXIS)
-                    );
-
-                    panel.setBackground(Theme.SURFACE);
-
-                    panel.setBorder(
-                            new EmptyBorder(40, 40, 40, 40)
-                    );
-
-                    panel.setPreferredSize(
-                            new Dimension(420, 430)
-                    );
+        cardPanel = UI.panel(p -> {
+                    p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+                    p.setBackground(Theme.SURFACE);
+                    p.setBorder(new EmptyBorder(40, 40, 40, 40));
                 },
                 titleLabel,
-
                 Box.createVerticalStrut(10),
                 subtitleLabel,
-
-                Box.createVerticalStrut(40),
-                loginLabel,
-
-                Box.createVerticalStrut(8),
+                Box.createVerticalStrut(30),
                 loginField,
-
-                Box.createVerticalStrut(20),
-                passwordLabel,
-
-                Box.createVerticalStrut(8),
+                Box.createVerticalStrut(10),
                 passwordField,
-
-                Box.createVerticalStrut(35),
+                Box.createVerticalStrut(20),
                 loginButton
         );
 
-        rootPanel = UI.panel(
-                panel -> {
-                    panel.setLayout(
-                            new GridBagLayout()
-                    );
-
-                    panel.setBackground(
-                            Theme.BACKGROUND
-                    );
-                },
-                cardPanel
-        );
-        validateFields();
+        rootPanel = UI.panel(p -> {
+            p.setLayout(new GridBagLayout());
+            p.setBackground(Theme.BACKGROUND);
+        }, cardPanel);
     }
 
-    /**
-     * Eventos.
-     */
     private void initEvents() {
-        /*
-         * Hover no botão
-         */
-        Events.mouse(loginButton, mouse -> {
-            mouse.onEntered(event -> {
-                loginButton.setBackground(
-                        Theme.PRIMARY_DARK
-                );
-            });
+        loginButton.addActionListener(e -> performLogin());
 
-            mouse.onExited(event -> {
-                loginButton.setBackground(
-                        Theme.PRIMARY
-                );
-            });
-        });
-
-        /*
-         * Enter
-         */
         Events.keyBinder(rootPanel, key -> {
             key.on("ENTER", this::performLogin);
         });
-
-        /*
-         * Validação
-         */
-        Events.text(
-                loginField,
-                text -> validateFields()
-        );
-
-        Events.text(
-                passwordField,
-                text -> validateFields()
-        );
-
-        /*
-         * Clique, sim
-         */
-        loginButton.addActionListener(
-                event -> performLogin()
-        );
     }
 
-    /**
-     * Validação dos campos.
-     */
-    private void validateFields() {
-        boolean loading =
-                Boolean.TRUE.equals(
-                        loginButton.getClientProperty("loading")
-                );
-
-        if (loading) {
-            return;
-        }
-
-        boolean valid =
-                !loginField.getText().isBlank()
-                        &&
-                        passwordField.getPassword().length > 0;
-        loginButton.setBackground(
-                valid
-                        ? Theme.PRIMARY
-                        : Theme.PRIMARY_DARK
-        );
-    }
-
-    /**
-     * Executa login.
-     */
     private void performLogin() {
-        /*
-         * Impede duplo clique
-         */
-        boolean loading =
-                Boolean.TRUE.equals(
-                        loginButton.getClientProperty("loading")
-                );
+        String login = loginField.getText().trim();
+        String senha = new String(passwordField.getPassword());
 
-        if (loading) {
-            return;
-        }
-        String login =
-                loginField.getText().trim();
-        String senha =
-                new String(
-                        passwordField.getPassword()
-                );
-
-        /*
-         * Validação
-         */
         if (login.isBlank() || senha.isBlank()) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Preencha login e senha.",
-                    "Campos obrigatórios",
-                    JOptionPane.WARNING_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Preencha login e senha");
             return;
         }
 
-        /*
-         * Loading
-         */
-        loginButton.putClientProperty("loading", true);
         loginButton.setText("Entrando...");
-        loginButton.setBackground(
-                Theme.PRIMARY_DARK
-        );
-
-        /*
-         * Login assíncrono
-         */
+        loginButton.setEnabled(false);
         Async.compute(
                 () -> usuarioService.login(login, senha),
                 this::onLoginSuccess,
@@ -331,49 +134,26 @@ public class LoginView extends JFrame {
         );
     }
 
-    /**
-     * Login OK.
-     */
-    private void onLoginSuccess(
-            UsuarioEntity usuario
-    ) {
+    private void onLoginSuccess(UsuarioEntity usuario) {
         JOptionPane.showMessageDialog(
                 this,
-                "Bem-vindo, "
-                        + usuario.getLogin()
-                        + " ("
-                        + usuario.getPerfil()
-                        + ")",
-                "Login realizado",
-                JOptionPane.INFORMATION_MESSAGE
+                "Bem-vindo " + usuario.getLogin()
         );
         dispose();
-
-        /*
-         * Abre meu dashboard querido
-         */
         SwingUtilities.invokeLater(() -> {
-            new DashboardView(usuarioService, usuario).setVisible(true);
+            new DashboardView(
+                    usuarioService,
+                    usuario,
+                    clienteService,
+                    pedidoService,
+                    produtoService
+            ).setVisible(true);
         });
     }
 
-    private void onLoginError(
-            Throwable throwable
-    ) {
-        /*
-         * Remove loading
-         */
-        loginButton.putClientProperty(
-                "loading",
-                false
-        );
+    private void onLoginError(Throwable e) {
         loginButton.setText("Entrar");
-        validateFields();
-        JOptionPane.showMessageDialog(
-                this,
-                throwable.getMessage(),
-                "Erro no login",
-                JOptionPane.ERROR_MESSAGE
-        );
+        loginButton.setEnabled(true);
+        JOptionPane.showMessageDialog(this, e.getMessage());
     }
 }

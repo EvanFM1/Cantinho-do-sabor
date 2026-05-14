@@ -1,6 +1,9 @@
 package org.example.ui.views;
 
 import org.example.entity.UsuarioEntity;
+import org.example.service.ClienteService;
+import org.example.service.PedidoService;
+import org.example.service.ProdutoService;
 import org.example.service.UsuarioService;
 import org.example.ui.UI;
 import org.example.ui.theme.Theme;
@@ -30,10 +33,22 @@ public class DashboardView extends JFrame {
 
     private final UsuarioService usuarioService;
     private final UsuarioEntity usuario;
+    private final ClienteService clienteService;
+    private final PedidoService pedidoService;
+    private final ProdutoService produtoService;
 
-    public DashboardView(UsuarioService usuarioService, UsuarioEntity usuario) {
+    public DashboardView(
+            UsuarioService usuarioService,
+            UsuarioEntity usuario,
+            ClienteService clienteService,
+            PedidoService pedidoService,
+            ProdutoService produtoService
+    ) {
         this.usuarioService = usuarioService;
         this.usuario = usuario;
+        this.clienteService = clienteService;
+        this.pedidoService = pedidoService;
+        this.produtoService = produtoService;
 
         configureFrame();
         initComponents();
@@ -42,16 +57,20 @@ public class DashboardView extends JFrame {
     }
 
     private void configureFrame() {
-        setTitle("Dashboard - Cantinho do Sabor");
+        setTitle("Menu - Cantinho do Sabor");
         setSize(1200, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
+    /*
+    É admin?
+     */
+    private boolean isAdmin() {
+        return "ADMIN".equalsIgnoreCase(usuario.getPerfil());
+    }
+
     private void initComponents() {
-        /*
-         * Labels de Menu
-         */
         dashboard = createMenuLabel("Dashboard");
         users = createMenuLabel("Users");
         products = createMenuLabel("Products");
@@ -64,13 +83,11 @@ public class DashboardView extends JFrame {
                 dashboard, users, products, settings, contact, calendar, test
         };
 
-        /*
-         * Panel (Conteúdo)
-         */
         panels = new JPanel[]{
                 createPanel("Dashboard"),
-                createPanel("Users"),
-                createPanel("Products"),
+                new ClienteView(clienteService),
+                new PedidoView(pedidoService),
+                new ProdutoView(produtoService),
                 createPanel("Settings"),
                 createPanel("Contact"),
                 createPanel("Calendar"),
@@ -78,8 +95,12 @@ public class DashboardView extends JFrame {
         };
 
         /*
-         * Panel Menu
+        Bloqueio Admin (campo funcionários)
          */
+        if (!isAdmin()) {
+            users.setVisible(false); // ou setEnabled(false)
+        }
+
         menuPanel = UI.panel(p -> {
                     p.setLayout(new GridLayout(7, 1));
                     p.setBackground(new Color(46, 49, 49));
@@ -111,9 +132,6 @@ public class DashboardView extends JFrame {
         addActions();
     }
 
-    /*
-     * Criador de Label (Menu)
-     */
     private JLabel createMenuLabel(String text) {
         return UI.label(text, label -> {
             label.setOpaque(true);
@@ -131,9 +149,6 @@ public class DashboardView extends JFrame {
         });
     }
 
-    /*
-     * Criador de Panel
-     */
     private JPanel createPanel(String name) {
         return UI.panel(p -> {
                     p.setLayout(new BorderLayout());
@@ -146,13 +161,11 @@ public class DashboardView extends JFrame {
         );
     }
 
-    /*
-     * Lógica
-     */
     private void addActions() {
         for (int i = 0; i < menuItems.length; i++) {
             int index = i;
             JLabel label = menuItems[i];
+
             label.addMouseListener(new java.awt.event.MouseAdapter() {
                 @Override
                 public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -162,22 +175,14 @@ public class DashboardView extends JFrame {
 
                 @Override
                 public void mouseEntered(java.awt.event.MouseEvent e) {
-                    label.setBorder(
-                            BorderFactory.createMatteBorder(
-                                    1, 0, 1, 0,
-                                    Color.YELLOW
-                            )
-                    );
+                    label.setBorder(BorderFactory.createMatteBorder(
+                            1, 0, 1, 0, Color.YELLOW));
                 }
 
                 @Override
                 public void mouseExited(java.awt.event.MouseEvent e) {
-                    label.setBorder(
-                            BorderFactory.createMatteBorder(
-                                    1, 0, 1, 0,
-                                    new Color(60, 60, 60)
-                            )
-                    );
+                    label.setBorder(BorderFactory.createMatteBorder(
+                            1, 0, 1, 0, new Color(60, 60, 60)));
                 }
             });
         }
@@ -185,21 +190,17 @@ public class DashboardView extends JFrame {
         showPanel(0);
     }
 
-    /*
-     * Troca de Panel
-     */
     private void showPanel(int index) {
         for (JPanel panel : panels) {
             panel.setVisible(false);
         }
-
         panels[index].setVisible(true);
         CardLayout cl = (CardLayout) contentPanel.getLayout();
         cl.show(contentPanel, String.valueOf(index));
     }
 
     /*
-     * Estilo ativo
+    Estilo ativo
      */
     private void setActive(JLabel selected) {
         for (JLabel label : menuItems) {
