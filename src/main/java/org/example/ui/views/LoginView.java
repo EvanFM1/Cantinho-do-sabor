@@ -353,7 +353,7 @@ public class LoginView extends JFrame {
          * Abre meu dashboard querido
          */
         SwingUtilities.invokeLater(() -> {
-            new DashboardView().setVisible(true);
+            new DashboardView(usuarioService, usuario).setVisible(true);
         });
     }
 
