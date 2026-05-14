@@ -1,5 +1,7 @@
 package org.example.ui.views;
 
+import org.example.entity.UsuarioEntity;
+import org.example.service.UsuarioService;
 import org.example.ui.UI;
 import org.example.ui.theme.Theme;
 
@@ -26,7 +28,13 @@ public class DashboardView extends JFrame {
     private JLabel calendar;
     private JLabel test;
 
-    public DashboardView() {
+    private final UsuarioService usuarioService;
+    private final UsuarioEntity usuario;
+
+    public DashboardView(UsuarioService usuarioService, UsuarioEntity usuario) {
+        this.usuarioService = usuarioService;
+        this.usuario = usuario;
+
         configureFrame();
         initComponents();
         setContentPane(root);
