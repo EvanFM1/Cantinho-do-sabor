@@ -1,68 +1,113 @@
 package org.example.ui.bindings.key;
 
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.function.Consumer;
-import javax.swing.*;
 
 /**
- * Builder para associação de atalhos de teclado via InputMap e ActionMap.
+ * Builder para associação de atalhos de teclado
+ * via InputMap e ActionMap.
  */
 public final class KeyBinder {
-
     /**
-     * Componente associado aos atalhos
-     *
-     * @see {@link JComponent}
+     * Componente associado aos atalhos.
      */
     private final JComponent component;
 
     /**
-     * Cria uma nova instância de KeyBind.
+     * Construtor.
      *
-     * @param component - Componente associado aos atalhos
-     * @return KeyBinder - A instância criada
+     * @param component componente alvo
      */
     public KeyBinder(JComponent component) {
         this.component = component;
     }
 
     /**
-     * Associa uma tecla a uma ação simples.
+     * Associa uma tecla a uma ação.
      *
-     * @param key - Representação da tecla (ex: "ENTER", "ctrl S")
-     * @param handler - Ação executada ao acionar a tecla
-     * @return KeyBinder - Instância atual para encadeamento
+     * Ex:
+     * - "ENTER"
+     * - "ctrl S"
+     * - "ESCAPE"
+     *
+     * @param key tecla
+     * @param handler ação
+     * @return KeyBinder
      */
-    public KeyBinder on(String key, Consumer<ActionEvent> handler) {
+    public KeyBinder on(
+            String key,
+            Consumer<ActionEvent> handler
+    ) {
         if (handler == null) {
             return this;
         }
 
-        KeyStroke keyStroke = KeyStroke.getKeyStroke(key);
+        KeyStroke keyStroke =
+                KeyStroke.getKeyStroke(key);
         if (keyStroke == null) {
-            throw new IllegalArgumentException("Key (KeyStroke) inválida: " + key);
+            throw new IllegalArgumentException(
+                    "KeyStroke inválido: " + key
+            );
         }
-
         String id = normalizeKey(key);
-        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, id);
-        component.getActionMap().put(id, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                handler.accept(e);
-            }
-        });
 
+        /*
+         * INPUT MAP
+         */
+        component
+                .getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(keyStroke, id);
+
+        /*
+         * ACTION MAP
+         */
+        component
+                .getActionMap()
+                .put(id, new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        /*
+                         * IGNORA EVENTOS
+                         * QUANDO COMPONENTE
+                         * NÃO ESTIVER VISÍVEL
+                         */
+                        if (!component.isShowing()) {
+                            return;
+                        }
+
+                        /*
+                         * IGNORA EVENTOS
+                         * QUANDO JANELA
+                         * NÃO ESTIVER FOCADA
+                         */
+                        if (!component.isFocusOwner()
+                                &&
+                                SwingUtilities.getWindowAncestor(component)
+                                        != KeyboardFocusManager
+                                        .getCurrentKeyboardFocusManager()
+                                        .getActiveWindow()) {
+                            return;
+                        }
+                        handler.accept(event);
+                    }
+                });
         return this;
     }
 
     /**
-     * Associa uma tecla a uma ação simples.
+     * Overload para Runnable.
      *
-     * @param key - Representação da tecla (ex: "ENTER", "ctrl S")
-     * @param handler - Ação executada ao acionar a tecla
-     * @return KeyBinder - Instância atual para encadeamento
+     * @param key tecla
+     * @param handler ação
+     * @return KeyBinder
      */
-    public KeyBinder on(String key, Runnable handler) {
+    public KeyBinder on(
+            String key,
+            Runnable handler
+    ) {
+
         if (handler == null) {
             return this;
         }
@@ -70,32 +115,36 @@ public final class KeyBinder {
     }
 
     /**
-     * Desassocia uma tecla de uma ação.
+     * Remove um atalho.
      *
-     * @param key - Representação da tecla (ex: "ENTER", "ctrl S")
-     * @return KeyBind - Instância atual para encadeamento
+     * @param key tecla
+     * @return KeyBinder
      */
     public KeyBinder off(String key) {
-        KeyStroke keyStroke = KeyStroke.getKeyStroke(key);
+        KeyStroke keyStroke =
+                KeyStroke.getKeyStroke(key);
+
         if (keyStroke == null) {
             return this;
         }
-
         String id = normalizeKey(key);
-        component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(keyStroke);
-        component.getActionMap().remove(id);
-
+        component
+                .getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .remove(keyStroke);
+        component
+                .getActionMap()
+                .remove(id);
         return this;
     }
 
     /**
-     * Normaliza a representação da tecla para uso no InputMap e ActionMap.
+     * Normaliza identificador interno.
      *
-     * @param key - Representação da tecla (ex: "ENTER", "ctrl S")
-     * @return String - Representação normalizada
+     * @param key tecla
+     * @return id normalizado
      */
     private String normalizeKey(String key) {
-        key = key.toUpperCase().trim();
-        return "KEYBIND@%s".formatted(key);
+        return "KEYBIND@" +
+                key.toUpperCase().trim();
     }
 }
