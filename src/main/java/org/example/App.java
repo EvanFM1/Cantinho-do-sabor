@@ -6,7 +6,6 @@ import jakarta.persistence.Persistence;
 
 import org.example.service.CategoriaService;
 import org.example.service.ClienteService;
-import org.example.service.FuncionarioService;
 import org.example.service.ItemPedidoService;
 import org.example.service.PedidoService;
 import org.example.service.ProdutoService;
@@ -27,7 +26,6 @@ public final class App {
     private static ClienteService clienteService;
     private static CategoriaService categoriaService;
     private static ProdutoService produtoService;
-    private static FuncionarioService funcionarioService;
     private static PedidoService pedidoService;
     private static VendaService vendaService;
     private static ItemPedidoService itemPedidoService;
@@ -41,7 +39,7 @@ public final class App {
         inicializarServices();
 
         SwingUtilities.invokeLater(() -> {
-            new LoginView(usuarioService);
+            new LoginView(usuarioService, clienteService, pedidoService, produtoService);
         });
     }
 
@@ -96,9 +94,6 @@ public final class App {
         produtoService =
                 new ProdutoService(entityManager);
 
-        funcionarioService =
-                new FuncionarioService(entityManager);
-
         pedidoService =
                 new PedidoService(entityManager);
 
@@ -143,10 +138,6 @@ public final class App {
 
     public static ProdutoService getProdutoService() {
         return produtoService;
-    }
-
-    public static FuncionarioService getFuncionarioService() {
-        return funcionarioService;
     }
 
     public static PedidoService getPedidoService() {
