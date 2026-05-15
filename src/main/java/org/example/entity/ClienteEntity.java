@@ -1,6 +1,7 @@
 package org.example.entity;
 
 import jakarta.persistence.*;
+import java.util.*;
 
 @Entity
 @Table(name = "clientes")
@@ -18,6 +19,13 @@ public class ClienteEntity {
 
     @Column(name = "telefone", length = 30)
     private String telefone;
+
+    @OneToMany(
+            mappedBy = "cliente",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<PedidoEntity> pedidos = new ArrayList<>();
 
     // Getters e Setters
     public Long getId() {

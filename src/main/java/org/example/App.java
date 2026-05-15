@@ -89,16 +89,16 @@ public final class App {
                 new UsuarioService(entityManager);
 
         clienteService =
-                new ClienteService(entityManager);
+                new ClienteService(entityManagerFactory);
 
         categoriaService =
-                new CategoriaService(entityManager);
+                new CategoriaService(entityManagerFactory);
 
         produtoService =
-                new ProdutoService(entityManager);
+                new ProdutoService(entityManagerFactory);
 
         pedidoService =
-                new PedidoService(entityManager);
+                new PedidoService(entityManagerFactory);
 
         vendaService =
                 new VendaService(entityManager);

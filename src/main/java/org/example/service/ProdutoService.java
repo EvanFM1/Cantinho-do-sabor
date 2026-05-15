@@ -1,6 +1,9 @@
 package org.example.service;
 
-import jakarta.persistence.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+
 import org.example.entity.CategoriaEntity;
 import org.example.entity.ProdutoEntity;
 import org.example.repository.ProdutoRepository;
@@ -9,105 +12,139 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public class ProdutoService {
+    private final EntityManagerFactory emf;
 
-    private EntityManager entityManager;
-    private ProdutoRepository produtoRepository;
-
-    public ProdutoService(EntityManager entityManager) {
-        this.entityManager = entityManager;
-        this.produtoRepository = new ProdutoRepository(entityManager);
+    public ProdutoService(EntityManagerFactory emf) {
+        this.emf = emf;
     }
 
     public ProdutoEntity criarProduto(ProdutoEntity produto, Long categoriaId) {
-        EntityTransaction transaction = entityManager.getTransaction();
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        ProdutoRepository repo = new ProdutoRepository(em);
+
         try {
-            transaction.begin();
-            if (produto.getNome() == null || produto.getNome().isEmpty()) {
+            tx.begin();
+            if (produto.getNome() == null || produto.getNome().isBlank()) {
                 throw new RuntimeException("Nome do produto é obrigatório!");
             }
+
             if (produto.getPreco() == null || produto.getPreco().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException("Preço deve ser maior que zero!");
             }
-            CategoriaEntity categoria = entityManager.find(CategoriaEntity.class, categoriaId);
-            if (categoria == null) throw new RuntimeException("Categoria não encontrada!");
+
+            CategoriaEntity categoria = em.find(CategoriaEntity.class, categoriaId);
+            if (categoria == null) {
+                throw new RuntimeException("Categoria não encontrada!");
+            }
 
             produto.setCategoria(categoria);
-            produtoRepository.salvar(produto);
-            transaction.commit();
+            repo.salvar(produto);
+            tx.commit();
             return produto;
         } catch (Exception e) {
-            if (transaction.isActive()) transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
     public ProdutoEntity buscarPorId(Long id) {
-        return produtoRepository.buscarPorId(id)
-                .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            ProdutoRepository repo = new ProdutoRepository(em);
+
+            return repo.buscarPorId(id)
+                    .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
+        } finally {
+            em.close();
+        }
     }
 
     public List<ProdutoEntity> listarProdutos() {
-        return produtoRepository.listarTodos();
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            return em.createQuery(
+                    "SELECT p FROM ProdutoEntity p JOIN FETCH p.categoria",
+                    ProdutoEntity.class
+            ).getResultList();
+        } finally {
+            em.close();
+        }
     }
 
     public void adicionarEstoque(Long id, BigDecimal quantidade) {
-        EntityTransaction transaction = entityManager.getTransaction();
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        ProdutoRepository repo = new ProdutoRepository(em);
+
         try {
-            transaction.begin();
-            ProdutoEntity produto = produtoRepository.buscarPorId(id)
+            tx.begin();
+            ProdutoEntity produto = repo.buscarPorId(id)
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
 
             if (quantidade.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException("Quantidade deve ser maior que zero!");
             }
 
-            // Soma usando BigDecimal
             produto.setEstoque(produto.getEstoque().add(quantidade));
-
-            transaction.commit();
+            tx.commit();
         } catch (Exception e) {
-            if (transaction.isActive()) transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
     public void removerEstoque(Long id, BigDecimal quantidade) {
-        EntityTransaction transaction = entityManager.getTransaction();
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        ProdutoRepository repo = new ProdutoRepository(em);
+
         try {
-            transaction.begin();
-            ProdutoEntity produto = produtoRepository.buscarPorId(id)
+            tx.begin();
+            ProdutoEntity produto = repo.buscarPorId(id)
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
 
             if (quantidade.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException("Quantidade deve ser positiva!");
             }
 
-            // Comparação: estoque < quantidade
             if (produto.getEstoque().compareTo(quantidade) < 0) {
                 throw new RuntimeException("Estoque insuficiente!");
             }
 
-            // Subtração usando BigDecimal
             produto.setEstoque(produto.getEstoque().subtract(quantidade));
-
-            transaction.commit();
+            tx.commit();
         } catch (Exception e) {
-            if (transaction.isActive()) transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
     public void deletarProduto(Long id) {
-        EntityTransaction transaction = entityManager.getTransaction();
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        ProdutoRepository repo = new ProdutoRepository(em);
+
         try {
-            transaction.begin();
-            ProdutoEntity produto = produtoRepository.buscarPorId(id)
+            tx.begin();
+            ProdutoEntity produto = repo.buscarPorId(id)
                     .orElseThrow(() -> new RuntimeException("Produto não encontrado!"));
-            produtoRepository.deletar(produto);
-            transaction.commit();
+
+            repo.deletar(produto);
+            tx.commit();
         } catch (Exception e) {
-            if (transaction.isActive()) transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 }

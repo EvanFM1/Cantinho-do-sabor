@@ -1,86 +1,108 @@
 package org.example.service;
 
-import jakarta.persistence.*;
-import java.util.List;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+
 import org.example.entity.ClienteEntity;
 import org.example.repository.ClienteRepository;
 
+import java.util.List;
+
 public class ClienteService {
+    private final EntityManagerFactory emf;
 
-    private final ClienteRepository clienteRepository;
-    private final EntityManager entityManager;
-
-    public ClienteService(EntityManager entityManager) {
-        this.entityManager = entityManager;
-        this.clienteRepository = new ClienteRepository(entityManager);
+    public ClienteService(EntityManagerFactory emf) {
+        this.emf = emf;
     }
 
     public ClienteEntity criarCliente(ClienteEntity cliente) {
-        EntityTransaction transaction = entityManager.getTransaction();
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
 
+        ClienteRepository repo = new ClienteRepository(em);
         try {
-            transaction.begin();
-
-            // Validações básicas de sorveteria
-            if (cliente.getNome() == null || cliente.getNome().isEmpty()) {
+            tx.begin();
+            if (cliente.getNome() == null || cliente.getNome().isBlank()) {
                 throw new RuntimeException("O nome do cliente é obrigatório!");
             }
 
-            ClienteEntity salvo = clienteRepository.salvar(cliente);
-
-            transaction.commit();
+            ClienteEntity salvo = repo.salvar(cliente);
+            tx.commit();
             return salvo;
         } catch (Exception e) {
-            transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
     public ClienteEntity buscarClientePorId(Long id) {
-        return clienteRepository.buscarPorId(id)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado!"));
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            ClienteRepository repo = new ClienteRepository(em);
+
+            return repo.buscarPorId(id)
+                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado!"));
+        } finally {
+            em.close();
+        }
     }
 
     public List<ClienteEntity> listarClientes() {
-        return clienteRepository.listarTodos();
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            ClienteRepository repo = new ClienteRepository(em);
+            return repo.listarTodos();
+        } finally {
+            em.close();
+        }
     }
 
-    public ClienteEntity atualizarCliente(Long id, ClienteEntity dadosAtualizados) {
-        EntityTransaction transaction = entityManager.getTransaction();
-        try {
-            transaction.begin();
+    public ClienteEntity atualizarCliente(Long id, ClienteEntity dados) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
 
-            ClienteEntity cliente = clienteRepository.buscarPorId(id)
+        ClienteRepository repo = new ClienteRepository(em);
+        try {
+            tx.begin();
+            ClienteEntity cliente = repo.buscarPorId(id)
                     .orElseThrow(() -> new RuntimeException("Cliente não encontrado!"));
 
-            // Atualizando apenas o que sobrou na entidade Cliente
-            cliente.setNome(dadosAtualizados.getNome());
-            cliente.setCpf(dadosAtualizados.getCpf());
-            cliente.setTelefone(dadosAtualizados.getTelefone());
-
-            ClienteEntity atualizado = clienteRepository.salvar(cliente);
-
-            transaction.commit();
+            cliente.setNome(dados.getNome());
+            cliente.setCpf(dados.getCpf());
+            cliente.setTelefone(dados.getTelefone());
+            ClienteEntity atualizado = repo.salvar(cliente);
+            tx.commit();
             return atualizado;
-
         } catch (Exception e) {
-            transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
     public void deletarCliente(Long id) {
-        EntityTransaction transaction = entityManager.getTransaction();
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        ClienteRepository repo = new ClienteRepository(em);
+
         try {
-            transaction.begin();
-            ClienteEntity cliente = clienteRepository.buscarPorId(id)
+            tx.begin();
+            ClienteEntity cliente = repo.buscarPorId(id)
                     .orElseThrow(() -> new RuntimeException("Cliente não encontrado!"));
 
-            clienteRepository.deletar(cliente);
-            transaction.commit();
+            repo.deletar(cliente);
+            tx.commit();
         } catch (Exception e) {
-            transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 }
