@@ -1,22 +1,20 @@
 package org.example.ui.views;
 
-import org.example.entity.CategoriaEntity;
 import org.example.entity.ProdutoEntity;
 import org.example.service.ProdutoService;
-import org.example.service.CategoriaService;
-import org.example.ui.components.CardPanel;
-import org.example.ui.components.PrimaryButton;
+import org.example.ui.Async;
+import org.example.ui.Events;
+import org.example.ui.UI;
 import org.example.ui.theme.Theme;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.math.BigDecimal;
 import java.util.List;
 
 public class ProdutoView extends JPanel {
-
     private final ProdutoService produtoService;
-    private final CategoriaService categoriaService; // Adicionado Service de Categoria
 
     private DefaultListModel<String> listModel;
     private JList<String> listaProdutos;
@@ -25,146 +23,465 @@ public class ProdutoView extends JPanel {
     private JTextField descricaoField;
     private JTextField precoField;
     private JTextField estoqueField;
+    private JTextField categoriaIdField;
     private JTextField produtoIdField;
-    private JComboBox<CategoriaEntity> categoriaCombo; // Trocado field por Combo
 
-    public ProdutoView(ProdutoService produtoService, CategoriaService categoriaService) {
+    private JButton criarButton;
+    private JButton deletarButton;
+    private JButton estoqueAddButton;
+    private JButton estoqueRemoveButton;
+    private JButton atualizarButton;
+
+    private List<ProdutoEntity> cache;
+
+    public ProdutoView(ProdutoService produtoService) {
         this.produtoService = produtoService;
-        this.categoriaService = categoriaService;
         initComponents();
         loadProdutos();
-        refreshCategorias(); // Carrega as categorias assim que inicia
     }
 
     private void initComponents() {
-        setLayout(new BorderLayout(10, 10));
+        setLayout(new BorderLayout());
         setBackground(Theme.BACKGROUND);
 
-        // LISTA (CENTRO)
+        /*
+        LISTA
+         */
         listModel = new DefaultListModel<>();
         listaProdutos = new JList<>(listModel);
         listaProdutos.setFont(Theme.TEXT_FONT);
+        listaProdutos.setSelectionMode(
+                ListSelectionModel.SINGLE_SELECTION
+        );
+
         JScrollPane scroll = new JScrollPane(listaProdutos);
-        scroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        scroll.setBorder(
+                new EmptyBorder(10, 10, 10, 10)
+        );
 
-        // CAMPOS
-        nomeField = createField("Nome do Produto");
+        /*
+        CAMPOS
+         */
+        nomeField = createField("Nome");
         descricaoField = createField("Descrição");
-        precoField = createField("Preço (R$)");
-        estoqueField = createField("Estoque Atual");
-        produtoIdField = createField("ID do Produto (p/ Deletar)");
+        precoField = createField("Preço");
+        estoqueField = createField("Quantidade");
+        categoriaIdField = createField("Categoria ID");
+        produtoIdField = createField("Produto ID");
 
-        // COMBOBOX DE CATEGORIAS
-        categoriaCombo = new JComboBox<>();
-        categoriaCombo.setBorder(BorderFactory.createTitledBorder("Selecione a Categoria"));
-        categoriaCombo.setBackground(Color.WHITE);
-
-        // Renderer para mostrar o Nome da Categoria no combo
-        categoriaCombo.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof CategoriaEntity cat) {
-                    setText(cat.getNome());
-                }
-                return this;
-            }
+        /*
+        BOTÕES
+         */
+        criarButton = UI.button("Criar Produto", b -> {
+            b.setBackground(Theme.PRIMARY);
+            b.setForeground(Color.WHITE);
         });
 
-        // BOTÕES USANDO SEUS COMPONENTES
-        PrimaryButton criarButton = new PrimaryButton("Criar Produto");
-        PrimaryButton atualizarListaButton = new PrimaryButton("Atualizar Lista");
+        deletarButton = UI.button("Deletar Produto", b -> {
+            b.setBackground(new Color(200, 60, 60));
+            b.setForeground(Color.WHITE);
+        });
 
-        JButton deletarButton = new JButton("Deletar Produto");
-        deletarButton.setBackground(new Color(200, 50, 50));
-        deletarButton.setForeground(Color.WHITE);
+        estoqueAddButton = UI.button("Adicionar Estoque", b -> {
+            b.setBackground(new Color(0, 120, 0));
+            b.setForeground(Color.WHITE);
+        });
 
-        // FORMULÁRIO (DIREITA) USANDO CARDPANEL
-        CardPanel form = new CardPanel();
-        form.setLayout(new GridLayout(9, 1, 5, 5));
-        form.setPreferredSize(new Dimension(320, 0));
+        estoqueRemoveButton = UI.button("Remover Estoque", b -> {
+            b.setBackground(new Color(120, 0, 0));
+            b.setForeground(Color.WHITE);
+        });
 
-        form.add(nomeField);
-        form.add(descricaoField);
-        form.add(precoField);
-        form.add(estoqueField);
-        form.add(categoriaCombo);
-        form.add(criarButton);
-        form.add(new JSeparator()); // Linha divisória
-        form.add(produtoIdField);
-        form.add(deletarButton);
+        atualizarButton = UI.button("Atualizar Lista", b -> {
+            b.setBackground(Theme.PRIMARY_DARK);
+            b.setForeground(Color.WHITE);
+        });
 
+        /*
+        FORM
+         */
+        JPanel form = UI.panel(p -> {
+                    p.setLayout(new GridLayout(12, 1, 5, 5));
+                    p.setBackground(Theme.SURFACE);
+                    p.setBorder(
+                            new EmptyBorder(20, 20, 20, 20)
+                    );
+
+                    p.setPreferredSize(
+                            new Dimension(320, 0)
+                    );
+                },
+                nomeField,
+                descricaoField,
+                precoField,
+                estoqueField,
+                categoriaIdField,
+                produtoIdField,
+
+                criarButton,
+                deletarButton,
+                estoqueAddButton,
+                estoqueRemoveButton,
+                atualizarButton
+        );
+
+        /*
+        LAYOUT
+         */
         add(scroll, BorderLayout.CENTER);
         add(form, BorderLayout.EAST);
 
-        // EVENTOS
-        criarButton.addActionListener(e -> criarProduto());
-        deletarButton.addActionListener(e -> deletarProduto());
-        // Botão de atualizar também recarrega o combo de categorias
-        atualizarListaButton.addActionListener(e -> {
-            loadProdutos();
-            refreshCategorias();
+        /*
+        EVENTOS
+         */
+        criarButton.addActionListener(
+                e -> criarProduto()
+        );
+
+        deletarButton.addActionListener(
+                e -> deletarProduto()
+        );
+
+        estoqueAddButton.addActionListener(
+                e -> addEstoque()
+        );
+
+        estoqueRemoveButton.addActionListener(
+                e -> removerEstoque()
+        );
+
+        atualizarButton.addActionListener(
+                e -> loadProdutos()
+        );
+
+        listaProdutos.addListSelectionListener(
+                e -> preencherCampos()
+        );
+
+        /*
+        CLICK FORA = DESSELECIONA
+         */
+        Events.mouse(this, mouse -> {
+            mouse.onPressed(event -> {
+
+                Component clicked =
+                        SwingUtilities.getDeepestComponentAt(
+                                ProdutoView.this,
+                                event.getX(),
+                                event.getY()
+                        );
+
+                if (clicked == null) {
+                    clearSelection();
+                    return;
+                }
+
+                if (!SwingUtilities.isDescendingFrom(
+                        clicked,
+                        listaProdutos
+                )) {
+                    clearSelection();
+                }
+            });
+        });
+
+        // KEYBINDS
+        Events.keyBinder(this, key -> {
+            // ENTER = CRIAR
+            key.on("ENTER", () -> {
+                if (nomeField.isFocusOwner()
+                        || descricaoField.isFocusOwner()
+                        || precoField.isFocusOwner()
+                        || estoqueField.isFocusOwner()
+                        || categoriaIdField.isFocusOwner()) {
+
+                    criarProduto();
+                }
+            });
+
+            // DELETE = DELETAR
+            key.on("DELETE", () -> {
+                if (listaProdutos.getSelectedIndex() >= 0) {
+                    deletarProduto();
+                }
+            });
+
+            // ESC = LIMPAR
+            key.on("ESCAPE", this::clearFields);
+
+            // CTRL R = RELOAD
+            key.on("ctrl R", this::loadProdutos);
         });
     }
 
     private JTextField createField(String title) {
         JTextField field = new JTextField();
-        field.setBorder(BorderFactory.createTitledBorder(title));
+        field.setFont(Theme.TEXT_FONT);
+
+        field.setBorder(
+                BorderFactory.createTitledBorder(title)
+        );
         return field;
     }
 
-    public void refreshCategorias() {
-        categoriaCombo.removeAllItems();
-        List<CategoriaEntity> categorias = categoriaService.listarCategorias();
-        for (CategoriaEntity cat : categorias) {
-            categoriaCombo.addItem(cat);
-        }
-    }
-
+    /*
+    CRIAR
+     */
     private void criarProduto() {
-        try {
-            ProdutoEntity p = new ProdutoEntity();
-            p.setNome(nomeField.getText());
-            p.setDescricao(descricaoField.getText());
-            p.setPreco(new BigDecimal(precoField.getText()));
-            p.setEstoque(new BigDecimal(estoqueField.getText()));
+        String nome = nomeField.getText().trim();
+        String descricao = descricaoField.getText().trim();
+        String preco = precoField.getText().trim();
+        String estoque = estoqueField.getText().trim();
+        String categoriaId = categoriaIdField.getText().trim();
 
-            // Pega o objeto categoria selecionado no Combo
-            CategoriaEntity selecionada = (CategoriaEntity) categoriaCombo.getSelectedItem();
-            if (selecionada == null) throw new RuntimeException("Selecione uma categoria!");
-
-            // Usa o ID da categoria selecionada para salvar
-            produtoService.criarProduto(p, selecionada.getId());
-
-            JOptionPane.showMessageDialog(this, "Produto criado com sucesso!");
-            clearFields();
-            loadProdutos();
-        } catch (Exception e) {
-            showError(e);
+        if (nome.isBlank()
+                || preco.isBlank()
+                || estoque.isBlank()
+                || categoriaId.isBlank()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Preencha os campos obrigatórios!",
+                    "Validação",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
         }
+
+        Async.compute(
+                () -> {
+                    ProdutoEntity produto =
+                            new ProdutoEntity();
+
+                    produto.setNome(nome);
+                    produto.setDescricao(descricao);
+
+                    produto.setPreco(
+                            new BigDecimal(preco)
+                    );
+
+                    produto.setEstoque(
+                            new BigDecimal(estoque)
+                    );
+
+                    produtoService.criarProduto(
+                            produto,
+                            Long.parseLong(categoriaId)
+                    );
+                    return null;
+                },
+
+                success -> {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Produto criado com sucesso!"
+                    );
+                    clearFields();
+                    loadProdutos();
+                },
+                error -> showError(error)
+        );
     }
 
+    /*
+    DELETAR
+     */
     private void deletarProduto() {
+        Long id;
+
         try {
-            Long id = Long.parseLong(produtoIdField.getText());
-            produtoService.deletarProduto(id);
-            JOptionPane.showMessageDialog(this, "Produto removido!");
-            loadProdutos();
+            if (!produtoIdField.getText().isBlank()) {
+                id = Long.parseLong(
+                        produtoIdField.getText()
+                );
+
+            } else {
+                int index =
+                        listaProdutos.getSelectedIndex();
+
+                if (index < 0) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Selecione um produto!"
+                    );
+                    return;
+                }
+                id = cache.get(index).getId();
+            }
+
+        } catch (Exception e) {
+            showError(e);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Deseja deletar o produto?",
+                "Confirmar",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        Long finalId = id;
+        Async.compute(
+                () -> {
+                    produtoService.deletarProduto(
+                            finalId
+                    );
+                    return null;
+                },
+
+                success -> {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "Produto deletado!"
+                    );
+                    clearFields();
+                    loadProdutos();
+                },
+                error -> showError(error)
+        );
+    }
+
+    /*
+    ADICIONAR ESTOQUE
+     */
+    private void addEstoque() {
+        try {
+            Long id = Long.parseLong(
+                    produtoIdField.getText()
+            );
+
+            BigDecimal qtd =
+                    new BigDecimal(
+                            estoqueField.getText()
+                    );
+
+            Async.compute(
+                    () -> {
+                        produtoService.adicionarEstoque(
+                                id,
+                                qtd
+                        );
+                        return null;
+                    },
+
+                    success -> {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Estoque adicionado!"
+                        );
+                        loadProdutos();
+                    },
+                    error -> showError(error)
+            );
         } catch (Exception e) {
             showError(e);
         }
     }
 
+    /*
+    REMOVER ESTOQUE
+     */
+    private void removerEstoque() {
+        try {
+            Long id = Long.parseLong(
+                    produtoIdField.getText()
+            );
+
+            BigDecimal qtd =
+                    new BigDecimal(
+                            estoqueField.getText()
+                    );
+
+            Async.compute(
+                    () -> {
+                        produtoService.removerEstoque(
+                                id,
+                                qtd
+                        );
+                        return null;
+                    },
+
+                    success -> {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Estoque removido!"
+                        );
+                        loadProdutos();
+                    },
+                    error -> showError(error)
+            );
+        } catch (Exception e) {
+            showError(e);
+        }
+    }
+
+    /*
+    LISTAR
+     */
     private void loadProdutos() {
         listModel.clear();
-        List<ProdutoEntity> cache = produtoService.listarProdutos();
+        Async.compute(
+                produtoService::listarProdutos,
+                produtos -> {
+                    cache = produtos;
+                    for (ProdutoEntity p : produtos) {
 
-        for (ProdutoEntity p : cache) {
-            listModel.addElement(
-                    String.format("ID: %d | %s | R$ %.2f | Est: %s | Cat: %s",
-                            p.getId(), p.getNome(), p.getPreco(), p.getEstoque(), p.getCategoria().getNome())
-            );
+                        listModel.addElement(
+                                "• ID: " + p.getId()
+                                        + " | " + p.getNome()
+                                        + " | R$ " + p.getPreco()
+                                        + " | Estoque: " + p.getEstoque()
+                                        + " | Categoria: "
+                                        + p.getCategoria().getId()
+                        );
+                    }
+                },
+                error -> showError(error)
+        );
+    }
+
+    /*
+    PREENCHER CAMPOS
+     */
+    private void preencherCampos() {
+        int index =
+                listaProdutos.getSelectedIndex();
+
+        if (index < 0 || cache == null) {
+            return;
         }
+
+        ProdutoEntity produto = cache.get(index);
+        nomeField.setText(produto.getNome());
+        descricaoField.setText(
+                produto.getDescricao()
+        );
+
+        precoField.setText(
+                produto.getPreco().toString()
+        );
+
+        estoqueField.setText(
+                produto.getEstoque().toString()
+        );
+
+        categoriaIdField.setText(
+                produto.getCategoria()
+                        .getId()
+                        .toString()
+        );
+
+        produtoIdField.setText(
+                produto.getId().toString()
+        );
+    }
+
+    private void clearSelection() {
+        listaProdutos.clearSelection();
     }
 
     private void clearFields() {
@@ -172,10 +489,17 @@ public class ProdutoView extends JPanel {
         descricaoField.setText("");
         precoField.setText("");
         estoqueField.setText("");
+        categoriaIdField.setText("");
         produtoIdField.setText("");
+        clearSelection();
     }
 
-    private void showError(Exception e) {
-        JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+    private void showError(Throwable e) {
+        JOptionPane.showMessageDialog(
+                this,
+                e.getMessage(),
+                "Erro",
+                JOptionPane.ERROR_MESSAGE
+        );
     }
 }
