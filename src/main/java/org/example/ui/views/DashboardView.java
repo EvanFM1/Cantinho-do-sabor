@@ -6,6 +6,8 @@ import org.example.service.PedidoService;
 import org.example.service.ProdutoService;
 import org.example.service.UsuarioService;
 import org.example.ui.UI;
+import org.example.ui.components.Sidebar;
+import org.example.ui.components.Topbar;
 import org.example.ui.theme.Theme;
 
 import javax.swing.*;
@@ -13,23 +15,11 @@ import java.awt.*;
 
 /**
  * Dashboard principal do sistema.
- * Menu lateral + troca de telas.
+ * Utiliza componentes customizados para uma interface moderna.
  */
 public class DashboardView extends JFrame {
     private JPanel root;
-    private JPanel menuPanel;
     private JPanel contentPanel;
-
-    private JLabel[] menuItems;
-    private JPanel[] panels;
-
-    private JLabel dashboard;
-    private JLabel users;
-    private JLabel products;
-    private JLabel settings;
-    private JLabel contact;
-    private JLabel calendar;
-    private JLabel test;
 
     private final UsuarioService usuarioService;
     private final UsuarioEntity usuario;
@@ -57,157 +47,80 @@ public class DashboardView extends JFrame {
     }
 
     private void configureFrame() {
-        setTitle("Menu - Cantinho do Sabor");
-        setSize(1200, 700);
+        setTitle("Cantinho do Sabor - Sistema de Gestão");
+        setSize(1280, 720);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
-    /*
-    É admin?
-     */
     private boolean isAdmin() {
         return "ADMIN".equalsIgnoreCase(usuario.getPerfil());
     }
 
     private void initComponents() {
-        dashboard = createMenuLabel("Dashboard");
-        users = createMenuLabel("Users");
-        products = createMenuLabel("Products");
-        settings = createMenuLabel("Settings");
-        contact = createMenuLabel("Contact");
-        calendar = createMenuLabel("Calendar");
-        test = createMenuLabel("Test");
+        // 1. Criar a Sidebar Customizada
+        Sidebar sidebar = new Sidebar();
 
-        menuItems = new JLabel[]{
-                dashboard, users, products, settings, contact, calendar, test
-        };
+        // 2. Painel de Conteúdo com CardLayout
+        contentPanel = new JPanel(new CardLayout());
+        contentPanel.setBackground(Theme.BACKGROUND);
 
-        panels = new JPanel[]{
-                createPanel("Dashboard"),
-                new ClienteView(clienteService),
-                new PedidoView(pedidoService),
-                new ProdutoView(produtoService),
-                createPanel("Settings"),
-                createPanel("Contact"),
-                createPanel("Calendar"),
-                createPanel("Test")
-        };
+        // 3. Adicionar as telas ao CardLayout
+        contentPanel.add(createPanel("Bem-vindo, " + usuario.getLogin() + "!"), "0");
+        contentPanel.add(new ClienteView(clienteService), "1");
+        contentPanel.add(new PedidoView(pedidoService), "2");
+        contentPanel.add(new ProdutoView(produtoService), "3");
+        contentPanel.add(createPanel("Configurações do Sistema"), "4");
 
-        /*
-        Bloqueio Admin (campo funcionários)
-         */
-        if (!isAdmin()) {
-            users.setVisible(false); // ou setEnabled(false)
+        // 4. Configurar itens da Sidebar (Menus)
+        sidebar.addMenuItem("Início",        () -> showPanel("0"));
+
+        // Bloqueio de segurança para Admin (Item 33/34)
+        if (isAdmin()) {
+            sidebar.addMenuItem("Clientes",  () -> showPanel("1"));
         }
 
-        menuPanel = UI.panel(p -> {
-                    p.setLayout(new GridLayout(7, 1));
-                    p.setBackground(new Color(46, 49, 49));
-                },
-                dashboard,
-                users,
-                products,
-                settings,
-                contact,
-                calendar,
-                test
-        );
+        sidebar.addMenuItem("Pedidos",       () -> showPanel("2"));
+        sidebar.addMenuItem("Produtos",      () -> showPanel("3"));
+        sidebar.addMenuItem("Ajustes",       () -> showPanel("4"));
+        sidebar.addMenuItem("Sair",          this::logout);
 
-        contentPanel = UI.panel(p -> {
-            p.setLayout(new CardLayout());
-            p.setBackground(Theme.BACKGROUND);
-        });
+        // 5. Montagem da Estrutura Principal
+        // Painel que agrupa a Topbar e o Conteúdo
+        JPanel mainContent = new JPanel(new BorderLayout());
+        mainContent.add(new Topbar("Painel Administrativo"), BorderLayout.NORTH);
+        mainContent.add(contentPanel, BorderLayout.CENTER);
 
-        for (JPanel panel : panels) {
-            contentPanel.add(panel);
-        }
-
-        root = UI.panel(p -> {
-                    p.setLayout(new BorderLayout());
-                },
-                menuPanel
-        );
-        root.add(contentPanel, BorderLayout.CENTER);
-        addActions();
+        // Root une a Sidebar na esquerda e o MainContent no centro
+        root = new JPanel(new BorderLayout());
+        root.add(sidebar, BorderLayout.WEST);
+        root.add(mainContent, BorderLayout.CENTER);
     }
 
-    private JLabel createMenuLabel(String text) {
-        return UI.label(text, label -> {
-            label.setOpaque(true);
-            label.setBackground(new Color(46, 49, 49));
-            label.setForeground(Color.WHITE);
-            label.setFont(Theme.LABEL_FONT);
-            label.setHorizontalAlignment(SwingConstants.CENTER);
+    private void showPanel(String id) {
+        CardLayout cl = (CardLayout) contentPanel.getLayout();
+        cl.show(contentPanel, id);
+    }
 
-            label.setBorder(
-                    BorderFactory.createMatteBorder(
-                            1, 0, 1, 0,
-                            new Color(60, 60, 60)
-                    )
-            );
-        });
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Deseja realmente sair?", "Logout", JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            dispose();
+            new LoginView(usuarioService, clienteService, pedidoService, produtoService);
+        }
     }
 
     private JPanel createPanel(String name) {
         return UI.panel(p -> {
-                    p.setLayout(new BorderLayout());
+                    p.setLayout(new GridBagLayout());
                     p.setBackground(Theme.SURFACE);
                 },
                 UI.label(name, l -> {
                     l.setFont(Theme.TITLE_FONT);
-                    l.setHorizontalAlignment(SwingConstants.CENTER);
+                    l.setForeground(Theme.PRIMARY);
                 })
         );
-    }
-
-    private void addActions() {
-        for (int i = 0; i < menuItems.length; i++) {
-            int index = i;
-            JLabel label = menuItems[i];
-
-            label.addMouseListener(new java.awt.event.MouseAdapter() {
-                @Override
-                public void mouseClicked(java.awt.event.MouseEvent e) {
-                    showPanel(index);
-                    setActive(label);
-                }
-
-                @Override
-                public void mouseEntered(java.awt.event.MouseEvent e) {
-                    label.setBorder(BorderFactory.createMatteBorder(
-                            1, 0, 1, 0, Color.YELLOW));
-                }
-
-                @Override
-                public void mouseExited(java.awt.event.MouseEvent e) {
-                    label.setBorder(BorderFactory.createMatteBorder(
-                            1, 0, 1, 0, new Color(60, 60, 60)));
-                }
-            });
-        }
-        setActive(menuItems[0]);
-        showPanel(0);
-    }
-
-    private void showPanel(int index) {
-        for (JPanel panel : panels) {
-            panel.setVisible(false);
-        }
-        panels[index].setVisible(true);
-        CardLayout cl = (CardLayout) contentPanel.getLayout();
-        cl.show(contentPanel, String.valueOf(index));
-    }
-
-    /*
-    Estilo ativo
-     */
-    private void setActive(JLabel selected) {
-        for (JLabel label : menuItems) {
-            label.setBackground(new Color(46, 49, 49));
-            label.setForeground(Color.WHITE);
-        }
-        selected.setBackground(Color.WHITE);
-        selected.setForeground(Color.BLUE);
     }
 }

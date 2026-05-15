@@ -39,7 +39,10 @@ public final class App {
         inicializarServices();
 
         SwingUtilities.invokeLater(() -> {
-            new LoginView(usuarioService, clienteService, pedidoService, produtoService);
+            new LoginView(usuarioService,
+                    clienteService,
+                    pedidoService,
+                    produtoService);
         });
     }
 
@@ -139,6 +142,7 @@ public final class App {
     public static ProdutoService getProdutoService() {
         return produtoService;
     }
+
 
     public static PedidoService getPedidoService() {
         return pedidoService;
