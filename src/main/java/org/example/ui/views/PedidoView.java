@@ -18,10 +18,12 @@ public class PedidoView extends JPanel {
     private JList<String> listaPedidos;
     private JTextField clienteIdField;
     private JTextField pedidoIdField;
+
     private JButton criarButton;
     private JButton cancelarButton;
     private JButton listarButton;
     private JButton totalButton;
+
     private List<PedidoEntity> cache;
 
     public PedidoView(PedidoService pedidoService) {
@@ -191,6 +193,7 @@ public class PedidoView extends JPanel {
 
     private JTextField createField(String title) {
         JTextField field = new JTextField();
+
         field.setBorder(
                 BorderFactory.createTitledBorder(title)
         );
@@ -205,6 +208,7 @@ public class PedidoView extends JPanel {
         try {
             String clienteIdText =
                     clienteIdField.getText().trim();
+
             if (clienteIdText.isBlank()) {
                 JOptionPane.showMessageDialog(
                         this,
@@ -300,6 +304,7 @@ public class PedidoView extends JPanel {
             Long id = Long.parseLong(pedidoIdText);
             Async.compute(
                     () -> pedidoService.calcularTotal(id),
+
                     total -> JOptionPane.showMessageDialog(
                             this,
                             "Total: R$ " + total
@@ -319,10 +324,9 @@ public class PedidoView extends JPanel {
 
         Async.compute(
                 pedidoService::listarPedidosPendentes,
-
                 pedidos -> {
-                    cache = pedidos;
 
+                    cache = pedidos;
                     for (PedidoEntity p : pedidos) {
                         listModel.addElement(
                                 "• ID: " + p.getId()
