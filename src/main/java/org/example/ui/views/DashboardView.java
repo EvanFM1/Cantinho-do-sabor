@@ -52,11 +52,15 @@ public class DashboardView extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        setIconImage(
-                new ImageIcon(
-                        getClass().getResource("/assets/icon.png")
-                ).getImage()
-        );
+        try {
+            setIconImage(
+                    new ImageIcon(
+                            getClass().getResource("/assets/icon.png")
+                    ).getImage()
+            );
+        } catch (Exception e) {
+            System.out.println("Ícone não encontrado.");
+        }
     }
 
     private boolean isAdmin() {
@@ -77,18 +81,28 @@ public class DashboardView extends JFrame {
         contentPanel.add(new PedidoView(pedidoService, produtoService), "2");
         contentPanel.add(new ProdutoView(produtoService, categoriaService), "3");
         contentPanel.add(new CategoriaView(categoriaService), "4");
-        contentPanel.add(createPanel("Configurações do Sistema"), "5");
+
+        // Adicionando a sua nova tela de Relatórios
+        contentPanel.add(new RelatorioView(pedidoService), "5");
 
         sidebar.addMenuItem("Início", () -> showPanel("0"));
-
-        if (isAdmin()) {
-            sidebar.addMenuItem("Clientes", () -> showPanel("1"));
-        }
-
+        sidebar.addMenuItem("Clientes", () -> showPanel("1"));
         sidebar.addMenuItem("Pedidos", () -> showPanel("2"));
         sidebar.addMenuItem("Produtos", () -> showPanel("3"));
         sidebar.addMenuItem("Categorias", () -> showPanel("4"));
-        sidebar.addMenuItem("Ajustes", () -> showPanel("5"));
+
+        // Botão de Relatórios com a trava de segurança
+        sidebar.addMenuItem("Relatórios", () -> {
+            if (isAdmin()) {
+                showPanel("5");
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Acesso Negado: Apenas administradores podem acessar os relatórios.",
+                        "Controle de Acesso",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
         sidebar.addMenuItem("Sair", this::logout);
 
         // Painel que agrupa a Topbar e o Conteúdo

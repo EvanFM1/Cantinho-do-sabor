@@ -9,7 +9,9 @@ import org.example.repository.PedidoRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PedidoService {
 
@@ -22,6 +24,50 @@ public class PedidoService {
         this.entityManager = emf.createEntityManager();
         this.pedidoRepository = new PedidoRepository(this.entityManager);
     }
+
+    // MÉTODOS PARA RELATÓRIO
+
+    public BigDecimal calcularFaturamentoTotal() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            BigDecimal total = em.createQuery(
+                    "SELECT SUM(i.quantidade * i.precoUnitario) FROM ItemPedidoEntity i WHERE i.pedido.status = 'PAGO'",
+                    BigDecimal.class).getSingleResult();
+            return total != null ? total : BigDecimal.ZERO;
+        } finally {
+            em.close();
+        }
+    }
+
+    public Long contarVendasRealizadas() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            return em.createQuery("SELECT COUNT(p) FROM PedidoEntity p WHERE p.status = 'PAGO'", Long.class)
+                    .getSingleResult();
+        } finally {
+            em.close();
+        }
+    }
+
+    public Map<String, BigDecimal> getVendasPorCategoria() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            List<Object[]> resultados = em.createQuery(
+                            "SELECT i.produto.categoria.nome, SUM(i.quantidade) " +
+                                    "FROM ItemPedidoEntity i WHERE i.pedido.status = 'PAGO' " +
+                                    "GROUP BY i.produto.categoria.nome", Object[].class)
+                    .getResultList();
+
+            Map<String, BigDecimal> mapa = new HashMap<>();
+            for (Object[] res : resultados) {
+                mapa.put((String) res[0], (BigDecimal) res[1]);
+            }
+            return mapa;
+        } finally {
+            em.close();
+        }
+    }
+
 
     // LISTAR POR STATUS
     public List<PedidoEntity> listarPedidosPorStatus(String status) {
@@ -198,7 +244,6 @@ public class PedidoService {
             item.setQuantidade(qtd);
             item.setPrecoUnitario(produto.getPreco());
 
-            item.setPedido(pedido);
             em.persist(item);
             tx.commit();
         } catch (Exception e) {
