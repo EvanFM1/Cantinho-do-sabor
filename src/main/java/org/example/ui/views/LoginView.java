@@ -1,13 +1,12 @@
 package org.example.ui.views;
 
 import org.example.entity.UsuarioEntity;
-import org.example.service.ClienteService;
-import org.example.service.PedidoService;
-import org.example.service.ProdutoService;
-import org.example.service.UsuarioService;
+import org.example.service.*; // Importando todos os services
 import org.example.ui.Async;
 import org.example.ui.Events;
 import org.example.ui.UI;
+import org.example.ui.components.CardPanel; // Importando seu componente
+import org.example.ui.components.PrimaryButton; // Usando seu botão roxo
 import org.example.ui.theme.Theme;
 
 import javax.swing.*;
@@ -19,105 +18,94 @@ public class LoginView extends JFrame {
     private final ClienteService clienteService;
     private final PedidoService pedidoService;
     private final ProdutoService produtoService;
+    private final CategoriaService categoriaService; // Adicionado para passar ao Dashboard
 
     private JPanel rootPanel;
-    private JPanel cardPanel;
-
-    private JLabel titleLabel;
-    private JLabel subtitleLabel;
+    private CardPanel cardPanel; // Agora usa o seu componente CardPanel
 
     private JTextField loginField;
     private JPasswordField passwordField;
-    private JButton loginButton;
+    private PrimaryButton loginButton; // Usando seu PrimaryButton
 
     public LoginView(
             UsuarioService usuarioService,
             ClienteService clienteService,
             PedidoService pedidoService,
-            ProdutoService produtoService
+            ProdutoService produtoService,
+            CategoriaService categoriaService // Recebe o service aqui
     ) {
         this.usuarioService = usuarioService;
         this.clienteService = clienteService;
         this.pedidoService = pedidoService;
         this.produtoService = produtoService;
+        this.categoriaService = categoriaService;
 
         configureFrame();
         initComponents();
         initEvents();
 
         setContentPane(rootPanel);
-        SwingUtilities.updateComponentTreeUI(this);
         setVisible(true);
     }
 
     private void configureFrame() {
-        setTitle("Cantinho do Sabor");
+        setTitle("Cantinho do Sabor - Login");
         setSize(1200, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
     private void initComponents() {
-        titleLabel = UI.label("Cantinho do Sabor", l -> {
-            l.setFont(Theme.TITLE_FONT);
-            l.setForeground(Theme.PRIMARY);
-            l.setAlignmentX(Component.CENTER_ALIGNMENT);
-        });
+        // Títulos
+        JLabel titleLabel = new JLabel("Cantinho do Sabor");
+        titleLabel.setFont(Theme.TITLE_FONT);
+        titleLabel.setForeground(Theme.PRIMARY);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        subtitleLabel = UI.label("Sistema de Gestão da Sorveteria", l -> {
-            l.setFont(Theme.TEXT_FONT);
-            l.setForeground(Theme.PRIMARY_DARK);
-            l.setAlignmentX(Component.CENTER_ALIGNMENT);
-        });
+        JLabel subtitleLabel = new JLabel("Sistema de Gestão da Sorveteria");
+        subtitleLabel.setFont(Theme.TEXT_FONT);
+        subtitleLabel.setForeground(Theme.PRIMARY_DARK);
+        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        loginField = UI.textField(f -> {
-            f.setFont(Theme.TEXT_FONT);
-            f.setMaximumSize(new Dimension(320, 42));
-            f.setAlignmentX(Component.CENTER_ALIGNMENT);
-        });
+        // Campos
+        loginField = new JTextField();
+        loginField.setBorder(BorderFactory.createTitledBorder("Login"));
+        loginField.setMaximumSize(new Dimension(350, 55));
 
         passwordField = new JPasswordField();
-        passwordField.setFont(Theme.TEXT_FONT);
-        passwordField.setMaximumSize(new Dimension(320, 42));
-        passwordField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        passwordField.setBorder(BorderFactory.createTitledBorder("Senha"));
+        passwordField.setMaximumSize(new Dimension(350, 55));
 
-        loginButton = UI.button("Entrar", b -> {
-            b.setFont(Theme.BUTTON_FONT);
-            b.setBackground(Theme.PRIMARY);
-            b.setForeground(Color.WHITE);
-            b.setFocusPainted(false);
-            b.setAlignmentX(Component.CENTER_ALIGNMENT);
-            b.setMaximumSize(new Dimension(320, 45));
-        });
+        // Botão Customizado
+        loginButton = new PrimaryButton("Entrar no Sistema");
+        loginButton.setMaximumSize(new Dimension(350, 45));
+        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        cardPanel = UI.panel(p -> {
-                    p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-                    p.setBackground(Theme.SURFACE);
-                    p.setBorder(new EmptyBorder(40, 40, 40, 40));
-                },
-                titleLabel,
-                Box.createVerticalStrut(10),
-                subtitleLabel,
-                Box.createVerticalStrut(30),
-                loginField,
-                Box.createVerticalStrut(10),
-                passwordField,
-                Box.createVerticalStrut(20),
-                loginButton
-        );
+        // Usando CardPanel
+        cardPanel = new CardPanel();
+        cardPanel.setLayout(new BoxLayout(cardPanel, BoxLayout.Y_AXIS));
+        cardPanel.setPreferredSize(new Dimension(450, 450));
 
-        rootPanel = UI.panel(p -> {
-            p.setLayout(new GridBagLayout());
-            p.setBackground(Theme.BACKGROUND);
-        }, cardPanel);
+        cardPanel.add(Box.createVerticalGlue());
+        cardPanel.add(titleLabel);
+        cardPanel.add(Box.createVerticalStrut(10));
+        cardPanel.add(subtitleLabel);
+        cardPanel.add(Box.createVerticalStrut(30));
+        cardPanel.add(loginField);
+        cardPanel.add(Box.createVerticalStrut(15));
+        cardPanel.add(passwordField);
+        cardPanel.add(Box.createVerticalStrut(25));
+        cardPanel.add(loginButton);
+        cardPanel.add(Box.createVerticalGlue());
+
+        rootPanel = new JPanel(new GridBagLayout());
+        rootPanel.setBackground(Theme.BACKGROUND);
+        rootPanel.add(cardPanel);
     }
 
     private void initEvents() {
         loginButton.addActionListener(e -> performLogin());
-
-        Events.keyBinder(rootPanel, key -> {
-            key.on("ENTER", this::performLogin);
-        });
+        Events.keyBinder(rootPanel, key -> key.on("ENTER", this::performLogin));
     }
 
     private void performLogin() {
@@ -129,8 +117,9 @@ public class LoginView extends JFrame {
             return;
         }
 
-        loginButton.setText("Entrando...");
+        loginButton.setText("Autenticando...");
         loginButton.setEnabled(false);
+
         Async.compute(
                 () -> usuarioService.login(login, senha),
                 this::onLoginSuccess,
@@ -139,25 +128,24 @@ public class LoginView extends JFrame {
     }
 
     private void onLoginSuccess(UsuarioEntity usuario) {
-        JOptionPane.showMessageDialog(
-                this,
-                "Bem-vindo " + usuario.getLogin()
-        );
+        JOptionPane.showMessageDialog(this, "Bem-vindo, " + usuario.getLogin() + "!");
         dispose();
+
         SwingUtilities.invokeLater(() -> {
             new DashboardView(
                     usuarioService,
                     usuario,
                     clienteService,
                     pedidoService,
-                    produtoService
+                    produtoService,
+                    categoriaService
             ).setVisible(true);
         });
     }
 
     private void onLoginError(Throwable e) {
-        loginButton.setText("Entrar");
+        loginButton.setText("Entrar no Sistema");
         loginButton.setEnabled(true);
-        JOptionPane.showMessageDialog(this, e.getMessage());
+        JOptionPane.showMessageDialog(this, "Erro ao logar: " + e.getMessage());
     }
 }

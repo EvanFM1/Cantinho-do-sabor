@@ -25,15 +25,21 @@ public class CategoriaService {
                 throw new RuntimeException("Nome da categoria é obrigatório!");
             }
 
-            // Adaptando a lógica de preços da academia para a sorveteria
+            List<CategoriaEntity> todas = listarCategorias();
+            boolean jaExiste = todas.stream()
+                    .anyMatch(c -> c.getNome().equalsIgnoreCase(categoria.getNome()));
+
+            if (jaExiste) {
+                throw new RuntimeException("A categoria '" + categoria.getNome() + "' já está cadastrada!");
+            }
+
             if ("PICOLE".equalsIgnoreCase(categoria.getNome())) {
-                categoria.setValor(new BigDecimal("5.00")); // Preço unitário
+                categoria.setValor(new BigDecimal("5.00"));
             } else if ("PESO".equalsIgnoreCase(categoria.getNome())) {
-                categoria.setValor(new BigDecimal("60.00")); // Preço por KG
+                categoria.setValor(new BigDecimal("60.00"));
             } else if ("POTE".equalsIgnoreCase(categoria.getNome())) {
-                categoria.setValor(new BigDecimal("25.00")); // Preço do pote fechado
+                categoria.setValor(new BigDecimal("25.00"));
             } else {
-                // Caso queira permitir outros nomes com valor manual, remova o throw
                 throw new RuntimeException("Categoria inválida! Use PICOLE, PESO ou POTE.");
             }
 

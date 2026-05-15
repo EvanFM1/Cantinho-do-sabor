@@ -5,6 +5,7 @@ import org.example.service.ClienteService;
 import org.example.service.PedidoService;
 import org.example.service.ProdutoService;
 import org.example.service.UsuarioService;
+import org.example.service.CategoriaService;
 import org.example.ui.UI;
 import org.example.ui.components.Sidebar;
 import org.example.ui.components.Topbar;
@@ -26,19 +27,22 @@ public class DashboardView extends JFrame {
     private final ClienteService clienteService;
     private final PedidoService pedidoService;
     private final ProdutoService produtoService;
+    private final CategoriaService categoriaService;
 
     public DashboardView(
             UsuarioService usuarioService,
             UsuarioEntity usuario,
             ClienteService clienteService,
             PedidoService pedidoService,
-            ProdutoService produtoService
+            ProdutoService produtoService,
+            CategoriaService categoriaService
     ) {
         this.usuarioService = usuarioService;
         this.usuario = usuario;
         this.clienteService = clienteService;
         this.pedidoService = pedidoService;
         this.produtoService = produtoService;
+        this.categoriaService = categoriaService;
 
         configureFrame();
         initComponents();
@@ -69,7 +73,7 @@ public class DashboardView extends JFrame {
         contentPanel.add(createPanel("Bem-vindo, " + usuario.getLogin() + "!"), "0");
         contentPanel.add(new ClienteView(clienteService), "1");
         contentPanel.add(new PedidoView(pedidoService), "2");
-        contentPanel.add(new ProdutoView(produtoService), "3");
+        contentPanel.add(new ProdutoView(produtoService, categoriaService), "3");
         contentPanel.add(createPanel("Configurações do Sistema"), "4");
 
         // 4. Configurar itens da Sidebar (Menus)
@@ -108,7 +112,7 @@ public class DashboardView extends JFrame {
 
         if (confirm == JOptionPane.YES_OPTION) {
             dispose();
-            new LoginView(usuarioService, clienteService, pedidoService, produtoService);
+            new LoginView(usuarioService, clienteService, pedidoService, produtoService, categoriaService);
         }
     }
 
