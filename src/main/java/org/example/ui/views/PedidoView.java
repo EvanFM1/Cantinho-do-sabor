@@ -2,9 +2,9 @@ package org.example.ui.views;
 
 import org.example.entity.PedidoEntity;
 import org.example.service.PedidoService;
-import org.example.ui.Async;
 import org.example.ui.Events;
 import org.example.ui.UI;
+import org.example.ui.bindings.key.KeyBinder;
 import org.example.ui.theme.Theme;
 
 import javax.swing.*;
@@ -14,8 +14,10 @@ import java.util.List;
 
 public class PedidoView extends JPanel {
     private final PedidoService pedidoService;
+
     private DefaultListModel<String> listModel;
     private JList<String> listaPedidos;
+
     private JTextField clienteIdField;
     private JTextField pedidoIdField;
 
@@ -37,7 +39,7 @@ public class PedidoView extends JPanel {
         setBackground(Theme.BACKGROUND);
 
         /*
-        Lista
+         * LISTA
          */
         listModel = new DefaultListModel<>();
         listaPedidos = new JList<>(listModel);
@@ -45,49 +47,76 @@ public class PedidoView extends JPanel {
         listaPedidos.setSelectionMode(
                 ListSelectionModel.SINGLE_SELECTION
         );
-        JScrollPane scroll = new JScrollPane(listaPedidos);
-        scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        JScrollPane scroll =
+                new JScrollPane(listaPedidos);
+
+        scroll.setBorder(
+                new EmptyBorder(10, 10, 10, 10)
+        );
 
         /*
-        Campos
+         * CAMPOS
          */
-        clienteIdField = createField("Cliente ID");
-        pedidoIdField = createField("Pedido ID");
+        clienteIdField =
+                createField("Cliente ID");
+
+        pedidoIdField =
+                createField("Pedido ID");
 
         /*
-        Botões
+         * BOTÕES
          */
-        criarButton = UI.button("Criar Pedido", b -> {
-            b.setBackground(Theme.PRIMARY);
-            b.setForeground(Color.WHITE);
-        });
+        criarButton =
+                UI.button("Criar Pedido", b -> {
+                    b.setBackground(Theme.PRIMARY);
+                    b.setForeground(Color.WHITE);
+                });
 
-        cancelarButton = UI.button("Cancelar Pedido", b -> {
-            b.setBackground(new Color(200, 60, 60));
-            b.setForeground(Color.WHITE);
-        });
+        cancelarButton =
+                UI.button("Cancelar Pedido", b -> {
+                    b.setBackground(
+                            new Color(200, 60, 60)
+                    );
+                    b.setForeground(Color.WHITE);
+                });
 
-        listarButton = UI.button("Atualizar Lista", b -> {
-            b.setBackground(Theme.PRIMARY_DARK);
-            b.setForeground(Color.WHITE);
-        });
+        listarButton =
+                UI.button("Atualizar Lista", b -> {
+                    b.setBackground(
+                            Theme.PRIMARY_DARK
+                    );
+                    b.setForeground(Color.WHITE);
+                });
 
-        totalButton = UI.button("Calcular Total", b -> {
-            b.setBackground(new Color(70, 70, 70));
-            b.setForeground(Color.WHITE);
-        });
+        totalButton =
+                UI.button("Calcular Total", b -> {
+                    b.setBackground(
+                            new Color(70, 70, 70)
+                    );
+                    b.setForeground(Color.WHITE);
+                });
 
         /*
-        Formulário
+         * FORMULÁRIO
          */
         JPanel form = UI.panel(p -> {
-                    p.setLayout(new GridLayout(10, 1, 5, 5));
-                    p.setBackground(Theme.SURFACE);
-
-                    p.setBorder(
-                            new EmptyBorder(20, 20, 20, 20)
+                    p.setLayout(
+                            new GridLayout(10, 1, 5, 5)
                     );
 
+                    p.setBackground(
+                            Theme.SURFACE
+                    );
+
+                    p.setBorder(
+                            new EmptyBorder(
+                                    20,
+                                    20,
+                                    20,
+                                    20
+                            )
+                    );
                     p.setPreferredSize(
                             new Dimension(300, 0)
                     );
@@ -101,32 +130,32 @@ public class PedidoView extends JPanel {
         );
 
         /*
-        Layout
+         * LAYOUT
          */
         add(scroll, BorderLayout.CENTER);
         add(form, BorderLayout.EAST);
 
         /*
-        Eventos Mouse
+         * EVENTOS
          */
-        Events.mouse(criarButton, mouse ->
-                mouse.onClicked(e -> criarPedido())
+        criarButton.addActionListener(
+                e -> criarPedido()
         );
 
-        Events.mouse(cancelarButton, mouse ->
-                mouse.onClicked(e -> cancelarPedido())
+        cancelarButton.addActionListener(
+                e -> cancelarPedido()
         );
 
-        Events.mouse(listarButton, mouse ->
-                mouse.onClicked(e -> loadPedidos())
+        listarButton.addActionListener(
+                e -> loadPedidos()
         );
 
-        Events.mouse(totalButton, mouse ->
-                mouse.onClicked(e -> calcularTotal())
+        totalButton.addActionListener(
+                e -> calcularTotal()
         );
 
         /*
-        Selecionar pedido
+         * SELEÇÃO
          */
         listaPedidos.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -135,7 +164,7 @@ public class PedidoView extends JPanel {
         });
 
         /*
-        Deseleciona ao clicar fora
+         * CLICK FORA
          */
         Events.mouse(this, mouse -> {
             mouse.onPressed(event -> {
@@ -146,7 +175,8 @@ public class PedidoView extends JPanel {
                                 event.getY()
                         );
 
-                if (clicked == null ||
+                if (clicked == null
+                        ||
                         !SwingUtilities.isDescendingFrom(
                                 clicked,
                                 listaPedidos
@@ -158,41 +188,30 @@ public class PedidoView extends JPanel {
         });
 
         /*
-        Atalhos teclado
+         * KEYBINDS
          */
-        Events.keyBinder(this, key -> {
-            // ENTER -> criar pedido
-            key.on("ENTER", this::criarPedido);
-
-            // DELETE -> cancelar pedido
-            key.on("DELETE", () -> {
-
-                if (listaPedidos.getSelectedIndex() >= 0) {
-                    cancelarPedido();
-                }
-            });
-
-            // CTRL + R -> atualizar
-            key.on("ctrl R", this::loadPedidos);
-
-            // CTRL + T -> calcular total
-            key.on("ctrl T", () -> {
-
-                if (listaPedidos.getSelectedIndex() >= 0) {
-                    calcularTotal();
-                }
-            });
-
-            // ESC -> limpar seleção
-            key.on("ESCAPE", () -> {
-                listaPedidos.clearSelection();
-                clearFields();
-            });
-        });
+        new KeyBinder(this)
+                .on("ENTER", this::criarPedido)
+                .on("DELETE", () -> {
+                    if (listaPedidos.getSelectedIndex() >= 0) {
+                        cancelarPedido();
+                    }
+                })
+                .on("ctrl R", this::loadPedidos)
+                .on("ctrl T", () -> {
+                    if (listaPedidos.getSelectedIndex() >= 0) {
+                        calcularTotal();
+                    }
+                })
+                .on("ESCAPE", () -> {
+                    listaPedidos.clearSelection();
+                    clearFields();
+                });
     }
 
     private JTextField createField(String title) {
-        JTextField field = new JTextField();
+        JTextField field =
+                new JTextField();
 
         field.setBorder(
                 BorderFactory.createTitledBorder(title)
@@ -202,7 +221,7 @@ public class PedidoView extends JPanel {
     }
 
     /*
-    Criar pedido
+     * CRIAR
      */
     private void criarPedido() {
         try {
@@ -222,29 +241,21 @@ public class PedidoView extends JPanel {
             Long clienteId =
                     Long.parseLong(clienteIdText);
 
-            Async.compute(
-                    () -> {
-                        pedidoService.criarPedido(clienteId);
-                        return null;
-                    },
-
-                    success -> {
-                        JOptionPane.showMessageDialog(
-                                this,
-                                "Pedido criado!"
-                        );
-                        clearFields();
-                        loadPedidos();
-                    },
-                    error -> showError(error)
+            pedidoService.criarPedido(clienteId);
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Pedido criado!"
             );
+
+            clearFields();
+            loadPedidos();
         } catch (Exception e) {
             showError(e);
         }
     }
 
     /*
-    Cancelar pedido
+     * CANCELAR
      */
     private void cancelarPedido() {
         try {
@@ -261,30 +272,23 @@ public class PedidoView extends JPanel {
                 return;
             }
 
-            Long id = Long.parseLong(pedidoIdText);
-            Async.compute(
-                    () -> {
-                        pedidoService.cancelarPedido(id);
-                        return null;
-                    },
+            Long id =
+                    Long.parseLong(pedidoIdText);
 
-                    success -> {
-                        JOptionPane.showMessageDialog(
-                                this,
-                                "Pedido cancelado!"
-                        );
-                        clearFields();
-                        loadPedidos();
-                    },
-                    error -> showError(error)
+            pedidoService.cancelarPedido(id);
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Pedido cancelado!"
             );
+            clearFields();
+            loadPedidos();
         } catch (Exception e) {
             showError(e);
         }
     }
 
     /*
-    Calcular total
+     * TOTAL
      */
     private void calcularTotal() {
         try {
@@ -301,74 +305,87 @@ public class PedidoView extends JPanel {
                 return;
             }
 
-            Long id = Long.parseLong(pedidoIdText);
-            Async.compute(
-                    () -> pedidoService.calcularTotal(id),
+            Long id =
+                    Long.parseLong(pedidoIdText);
 
-                    total -> JOptionPane.showMessageDialog(
-                            this,
-                            "Total: R$ " + total
-                    ),
-                    this::showError
+            var total =
+                    pedidoService.calcularTotal(id);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Total: R$ " + total
             );
+
         } catch (Exception e) {
             showError(e);
         }
     }
 
     /*
-    Carregar pedidos
+     * LISTAR
      */
     private void loadPedidos() {
-        listModel.clear();
+        try {
+            listModel.clear();
+            cache =
+                    pedidoService
+                            .listarPedidosPendentes();
 
-        Async.compute(
-                pedidoService::listarPedidosPendentes,
-                pedidos -> {
-
-                    cache = pedidos;
-                    for (PedidoEntity p : pedidos) {
-                        listModel.addElement(
-                                "• ID: " + p.getId()
-                                        + " | Cliente: "
-                                        + p.getCliente().getNome()
-                                        + " | Status: "
-                                        + p.getStatus()
-                        );
-                    }
-                },
-                this::showError
-        );
+            for (PedidoEntity p : cache) {
+                listModel.addElement(
+                        "• ID: " + p.getId()
+                                + " | Cliente: "
+                                + p.getCliente().getNome()
+                                + " | Status: "
+                                + p.getStatus()
+                );
+            }
+        } catch (Exception e) {
+            showError(e);
+        }
     }
 
     /*
-    Preenche campos ao selecionar
+     * PREENCHER
      */
     private void preencherCampos() {
-        int index = listaPedidos.getSelectedIndex();
+        int index =
+                listaPedidos.getSelectedIndex();
 
-        if (index < 0 || cache == null) {
+        if (index < 0
+                || cache == null) {
             return;
         }
 
-        PedidoEntity pedido = cache.get(index);
+        PedidoEntity pedido =
+                cache.get(index);
+
         pedidoIdField.setText(
-                String.valueOf(pedido.getId())
+                String.valueOf(
+                        pedido.getId()
+                )
         );
 
         clienteIdField.setText(
                 String.valueOf(
-                        pedido.getCliente().getId()
+                        pedido.getCliente()
+                                .getId()
                 )
         );
     }
 
+    /*
+     * LIMPAR
+     */
     private void clearFields() {
         clienteIdField.setText("");
         pedidoIdField.setText("");
         listaPedidos.clearSelection();
     }
 
+    /*
+     * ERRO
+     */
     private void showError(Throwable e) {
         JOptionPane.showMessageDialog(
                 this,
