@@ -5,6 +5,7 @@ import org.example.service.ClienteService;
 import org.example.service.PedidoService;
 import org.example.service.ProdutoService;
 import org.example.service.UsuarioService;
+import org.example.ui.Events;
 import org.example.ui.UI;
 import org.example.ui.components.Sidebar;
 import org.example.ui.components.Topbar;
@@ -51,6 +52,12 @@ public class DashboardView extends JFrame {
         setSize(1280, 720);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        setIconImage(
+                new ImageIcon(
+                        getClass().getResource("/assets/icon.png")
+                ).getImage()
+        );
     }
 
     private boolean isAdmin() {
@@ -58,24 +65,22 @@ public class DashboardView extends JFrame {
     }
 
     private void initComponents() {
-        // 1. Criar a Sidebar Customizada
         Sidebar sidebar = new Sidebar();
 
-        // 2. Painel de Conteúdo com CardLayout
+        // Painel de Conteúdo com CardLayout
         contentPanel = new JPanel(new CardLayout());
         contentPanel.setBackground(Theme.BACKGROUND);
 
-        // 3. Adicionar as telas ao CardLayout
+        // Adicionar as telas ao CardLayout
         contentPanel.add(createPanel("Bem-vindo, " + usuario.getLogin() + "!"), "0");
         contentPanel.add(new ClienteView(clienteService), "1");
         contentPanel.add(new PedidoView(pedidoService), "2");
         contentPanel.add(new ProdutoView(produtoService), "3");
         contentPanel.add(createPanel("Configurações do Sistema"), "4");
 
-        // 4. Configurar itens da Sidebar (Menus)
+        // Configurar itens da Sidebar (Menus)
         sidebar.addMenuItem("Início",        () -> showPanel("0"));
 
-        // Bloqueio de segurança para Admin (Item 33/34)
         if (isAdmin()) {
             sidebar.addMenuItem("Clientes",  () -> showPanel("1"));
         }
@@ -85,16 +90,44 @@ public class DashboardView extends JFrame {
         sidebar.addMenuItem("Ajustes",       () -> showPanel("4"));
         sidebar.addMenuItem("Sair",          this::logout);
 
-        // 5. Montagem da Estrutura Principal
         // Painel que agrupa a Topbar e o Conteúdo
-        JPanel mainContent = new JPanel(new BorderLayout());
+        JPanel mainContent = UI.panel(p -> {
+                    p.setLayout(new BorderLayout());
+                    p.setBackground(Theme.BACKGROUND);
+                },
+                new Topbar("Painel Administrativo"),
+                contentPanel
+        );
         mainContent.add(new Topbar("Painel Administrativo"), BorderLayout.NORTH);
         mainContent.add(contentPanel, BorderLayout.CENTER);
 
         // Root une a Sidebar na esquerda e o MainContent no centro
-        root = new JPanel(new BorderLayout());
+        root = UI.panel(p -> {
+                    p.setLayout(new BorderLayout());
+                    p.setBackground(Theme.BACKGROUND);
+                },
+                sidebar,
+                mainContent
+        );
         root.add(sidebar, BorderLayout.WEST);
         root.add(mainContent, BorderLayout.CENTER);
+
+        /*
+        Atalhos globais
+        */
+        Events.keyBinder(root, key -> {
+            // Navegação rápida bro
+            key.on("ctrl 1", () -> showPanel("0"));
+            key.on("ctrl 2", () -> showPanel("1"));
+            key.on("ctrl 3", () -> showPanel("2"));
+            key.on("ctrl 4", () -> showPanel("3"));
+
+            // Logout rápido
+            key.on("ctrl Q", this::logout);
+
+            // ESC -> voltar início
+            key.on("ESCAPE", () -> showPanel("0"));
+        });
     }
 
     private void showPanel(String id) {

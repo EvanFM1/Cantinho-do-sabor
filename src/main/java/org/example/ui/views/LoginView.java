@@ -55,6 +55,12 @@ public class LoginView extends JFrame {
         setSize(1200, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        setIconImage(
+                new ImageIcon(
+                        getClass().getResource("/assets/icon.png")
+                ).getImage()
+        );
     }
 
     private void initComponents() {

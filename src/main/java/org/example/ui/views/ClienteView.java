@@ -3,6 +3,7 @@ package org.example.ui.views;
 import org.example.entity.ClienteEntity;
 import org.example.service.ClienteService;
 import org.example.ui.Async;
+import org.example.ui.Events;
 import org.example.ui.UI;
 import org.example.ui.theme.Theme;
 
@@ -39,7 +40,7 @@ public class ClienteView extends JPanel {
         setBackground(Theme.BACKGROUND);
 
         /*
-         * Lista
+        Lista
          */
         listModel = new DefaultListModel<>();
         listaClientes = new JList<>(listModel);
@@ -49,14 +50,14 @@ public class ClienteView extends JPanel {
         scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         /*
-         * Campos
+        Campos
          */
         nomeField = createField("Nome");
         cpfField = createField("CPF");
         telefoneField = createField("Telefone");
 
         /*
-         * Botões
+        Botões
          */
         salvarButton = UI.button("Cadastrar", b -> {
             b.setBackground(Theme.PRIMARY);
@@ -79,7 +80,7 @@ public class ClienteView extends JPanel {
         });
 
         /*
-         * Form
+        Form
          */
         JPanel form = UI.panel(p -> {
                     p.setLayout(new GridLayout(10, 1, 5, 5));
@@ -99,19 +100,85 @@ public class ClienteView extends JPanel {
         );
 
         /*
-         * Layout
+        Layout
          */
         add(scroll, BorderLayout.CENTER);
         add(form, BorderLayout.EAST);
 
         /*
-         * Eventos
+        Eventos
          */
-        salvarButton.addActionListener(e -> salvarCliente());
-        atualizarButton.addActionListener(e -> loadClientes());
-        editarButton.addActionListener(e -> editarCliente());
-        deletarButton.addActionListener(e -> deletarCliente());
-        listaClientes.addListSelectionListener(e -> preencherCampos());
+        Events.mouse(this, mouse -> {
+            mouse.onPressed(event -> {
+                Component clicked =
+                        SwingUtilities.getDeepestComponentAt(
+                                ClienteView.this,
+                                event.getX(),
+                                event.getY()
+                        );
+
+                /*
+                Deseleciona ao clicar fora da lista
+                 */
+                if (clicked == null ||
+                        !SwingUtilities.isDescendingFrom(clicked, listaClientes)) {
+                    listaClientes.clearSelection();
+                    clearFields();
+                }
+            });
+        });
+        Events.mouse(salvarButton, mouse ->
+                mouse.onClicked(e -> salvarCliente())
+        );
+
+        Events.mouse(atualizarButton, mouse ->
+                mouse.onClicked(e -> loadClientes())
+        );
+
+        Events.mouse(editarButton, mouse ->
+                mouse.onClicked(e -> editarCliente())
+        );
+
+        Events.mouse(deletarButton, mouse ->
+                mouse.onClicked(e -> deletarCliente())
+        );
+
+        listaClientes.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                preencherCampos();
+            }
+        });
+
+        /*
+        Atalhos de teclado
+         */
+        Events.keyBinder(this, key -> {
+        // ENTER -> salvar
+            key.on("ENTER", this::salvarCliente);
+
+        // DELETE -> deletar selecionado
+            key.on("DELETE", () -> {
+                if (listaClientes.getSelectedIndex() >= 0) {
+                    deletarCliente();
+                }
+            });
+
+        // CTRL + R -> atualizar lista
+                key.on("ctrl R", this::loadClientes);
+
+        // CTRL + E -> editar cliente
+                key.on("ctrl E", () -> {
+                    if (listaClientes.getSelectedIndex() >= 0) {
+                        editarCliente();
+                    }
+                });
+
+        // ESC -> limpar seleção
+                key.on("ESCAPE", () -> {
+                    listaClientes.clearSelection();
+                    clearFields();
+                });
+            });
     }
 
     private JTextField createField(String placeholder) {
@@ -124,7 +191,7 @@ public class ClienteView extends JPanel {
     }
 
     /*
-     * Criar
+    Criar
      */
     private void salvarCliente() {
         String nome = nomeField.getText().trim();
@@ -164,7 +231,7 @@ public class ClienteView extends JPanel {
                     String mensagem = error.getMessage();
 
                     /*
-                     * CPF duplicado
+                    CPF duplicado
                      */
                     if (mensagem != null &&
                             mensagem.toLowerCase().contains("cpf")) {
@@ -183,7 +250,7 @@ public class ClienteView extends JPanel {
     }
 
     /*
-     * Editar
+    Editar
      */
     private void editarCliente() {
         int index = listaClientes.getSelectedIndex();
@@ -229,7 +296,7 @@ public class ClienteView extends JPanel {
     }
 
     /*
-     * Deletar
+    Deletar
      */
     private void deletarCliente() {
         int index = listaClientes.getSelectedIndex();
@@ -279,7 +346,7 @@ public class ClienteView extends JPanel {
     }
 
     /*
-     * Lista
+    Lista
      */
     private void loadClientes() {
         listModel.clear();
@@ -309,7 +376,7 @@ public class ClienteView extends JPanel {
     }
 
     /*
-     * Preenche os campos ao clicar
+    Preenche os campos ao clicar
      */
     private void preencherCampos() {
         int index = listaClientes.getSelectedIndex();
