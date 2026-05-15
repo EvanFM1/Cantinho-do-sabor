@@ -72,18 +72,22 @@ public class LoginView extends JFrame {
 
         loginField = UI.textField(f -> {
             f.setFont(Theme.TEXT_FONT);
-            f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+            f.setMaximumSize(new Dimension(320, 42));
+            f.setAlignmentX(Component.CENTER_ALIGNMENT);
         });
 
         passwordField = new JPasswordField();
         passwordField.setFont(Theme.TEXT_FONT);
-        passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        passwordField.setMaximumSize(new Dimension(320, 42));
+        passwordField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         loginButton = UI.button("Entrar", b -> {
             b.setFont(Theme.BUTTON_FONT);
             b.setBackground(Theme.PRIMARY);
             b.setForeground(Color.WHITE);
             b.setFocusPainted(false);
+            b.setAlignmentX(Component.CENTER_ALIGNMENT);
+            b.setMaximumSize(new Dimension(320, 45));
         });
 
         cardPanel = UI.panel(p -> {
