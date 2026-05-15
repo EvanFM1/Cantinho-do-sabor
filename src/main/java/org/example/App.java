@@ -41,7 +41,8 @@ public final class App {
             new LoginView(usuarioService,
                     clienteService,
                     pedidoService,
-                    produtoService);
+                    produtoService,
+                    categoriaService);
         });
     }
 

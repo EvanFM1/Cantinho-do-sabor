@@ -1,11 +1,7 @@
 package org.example.ui.views;
 
 import org.example.entity.UsuarioEntity;
-import org.example.service.ClienteService;
-import org.example.service.PedidoService;
-import org.example.service.ProdutoService;
-import org.example.service.UsuarioService;
-import org.example.ui.Events;
+import org.example.service.*;
 import org.example.ui.UI;
 import org.example.ui.components.Sidebar;
 import org.example.ui.components.Topbar;
@@ -27,19 +23,22 @@ public class DashboardView extends JFrame {
     private final ClienteService clienteService;
     private final PedidoService pedidoService;
     private final ProdutoService produtoService;
+    private final CategoriaService categoriaService;
 
     public DashboardView(
             UsuarioService usuarioService,
             UsuarioEntity usuario,
             ClienteService clienteService,
             PedidoService pedidoService,
-            ProdutoService produtoService
+            ProdutoService produtoService,
+            CategoriaService categoriaService
     ) {
         this.usuarioService = usuarioService;
         this.usuario = usuario;
         this.clienteService = clienteService;
         this.pedidoService = pedidoService;
         this.produtoService = produtoService;
+        this.categoriaService = categoriaService;
 
         configureFrame();
         initComponents();
@@ -52,12 +51,6 @@ public class DashboardView extends JFrame {
         setSize(1280, 720);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-
-        setIconImage(
-                new ImageIcon(
-                        getClass().getResource("/assets/icon.png")
-                ).getImage()
-        );
     }
 
     private boolean isAdmin() {
@@ -65,22 +58,24 @@ public class DashboardView extends JFrame {
     }
 
     private void initComponents() {
+        // 1. Criar a Sidebar Customizada
         Sidebar sidebar = new Sidebar();
 
-        // Painel de Conteúdo com CardLayout
+        // 2. Painel de Conteúdo com CardLayout
         contentPanel = new JPanel(new CardLayout());
         contentPanel.setBackground(Theme.BACKGROUND);
 
-        // Adicionar as telas ao CardLayout
+        // 3. Adicionar as telas ao CardLayout
         contentPanel.add(createPanel("Bem-vindo, " + usuario.getLogin() + "!"), "0");
         contentPanel.add(new ClienteView(clienteService), "1");
         contentPanel.add(new PedidoView(pedidoService), "2");
-        contentPanel.add(new ProdutoView(produtoService), "3");
+        contentPanel.add(new ProdutoView(produtoService, categoriaService), "3");
         contentPanel.add(createPanel("Configurações do Sistema"), "4");
 
-        // Configurar itens da Sidebar (Menus)
+        // 4. Configurar itens da Sidebar (Menus)
         sidebar.addMenuItem("Início",        () -> showPanel("0"));
 
+        // Bloqueio de segurança para Admin (Item 33/34)
         if (isAdmin()) {
             sidebar.addMenuItem("Clientes",  () -> showPanel("1"));
         }
@@ -90,44 +85,16 @@ public class DashboardView extends JFrame {
         sidebar.addMenuItem("Ajustes",       () -> showPanel("4"));
         sidebar.addMenuItem("Sair",          this::logout);
 
+        // 5. Montagem da Estrutura Principal
         // Painel que agrupa a Topbar e o Conteúdo
-        JPanel mainContent = UI.panel(p -> {
-                    p.setLayout(new BorderLayout());
-                    p.setBackground(Theme.BACKGROUND);
-                },
-                new Topbar("Painel Administrativo"),
-                contentPanel
-        );
+        JPanel mainContent = new JPanel(new BorderLayout());
         mainContent.add(new Topbar("Painel Administrativo"), BorderLayout.NORTH);
         mainContent.add(contentPanel, BorderLayout.CENTER);
 
         // Root une a Sidebar na esquerda e o MainContent no centro
-        root = UI.panel(p -> {
-                    p.setLayout(new BorderLayout());
-                    p.setBackground(Theme.BACKGROUND);
-                },
-                sidebar,
-                mainContent
-        );
+        root = new JPanel(new BorderLayout());
         root.add(sidebar, BorderLayout.WEST);
         root.add(mainContent, BorderLayout.CENTER);
-
-        /*
-        Atalhos globais
-        */
-        Events.keyBinder(root, key -> {
-            // Navegação rápida bro
-            key.on("ctrl 1", () -> showPanel("0"));
-            key.on("ctrl 2", () -> showPanel("1"));
-            key.on("ctrl 3", () -> showPanel("2"));
-            key.on("ctrl 4", () -> showPanel("3"));
-
-            // Logout rápido
-            key.on("ctrl Q", this::logout);
-
-            // ESC -> voltar início
-            key.on("ESCAPE", () -> showPanel("0"));
-        });
     }
 
     private void showPanel(String id) {
@@ -141,7 +108,7 @@ public class DashboardView extends JFrame {
 
         if (confirm == JOptionPane.YES_OPTION) {
             dispose();
-            new LoginView(usuarioService, clienteService, pedidoService, produtoService);
+            new LoginView(usuarioService, clienteService, pedidoService, produtoService, categoriaService);
         }
     }
 
