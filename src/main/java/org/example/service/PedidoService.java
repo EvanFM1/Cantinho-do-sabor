@@ -4,109 +4,208 @@ import jakarta.persistence.*;
 import org.example.entity.ClienteEntity;
 import org.example.entity.ItemPedidoEntity;
 import org.example.entity.PedidoEntity;
+import org.example.entity.ProdutoEntity;
 import org.example.repository.PedidoRepository;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class PedidoService {
+
     private final EntityManager entityManager;
+    private final EntityManagerFactory emf;
     private final PedidoRepository pedidoRepository;
 
-    public PedidoService(EntityManager entityManager) {
-        this.entityManager = entityManager;
-        this.pedidoRepository = new PedidoRepository(entityManager);
+    public PedidoService(EntityManagerFactory emf) {
+        this.emf = emf;
+        this.entityManager = emf.createEntityManager();
+        this.pedidoRepository = new PedidoRepository(this.entityManager);
     }
 
+    // LISTAR POR STATUS
     public List<PedidoEntity> listarPedidosPorStatus(String status) {
-        String jpql = "SELECT p FROM PedidoEntity p JOIN FETCH p.cliente WHERE p.status = :status";
-        return entityManager.createQuery(jpql, PedidoEntity.class).setParameter("status", status).getResultList();
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            return em.createQuery("""
+                SELECT DISTINCT p FROM PedidoEntity p
+                JOIN FETCH p.cliente
+                LEFT JOIN FETCH p.itens i
+                LEFT JOIN FETCH i.produto
+                WHERE p.status = :status
+            """, PedidoEntity.class)
+                    .setParameter("status", status)
+                    .getResultList();
+
+        } finally {
+            em.close();
+        }
     }
 
     public List<PedidoEntity> listarPedidosPendentes() {
-        String jpql = "SELECT p FROM PedidoEntity p " +
-                "JOIN FETCH p.cliente " +
-                "WHERE p.status = 'ABERTO'";
-
-        return entityManager.createQuery(jpql, PedidoEntity.class).getResultList();
+        return listarPedidosPorStatus("ABERTO");
     }
 
+    // CRIAR PEDIDO
     public PedidoEntity criarPedido(Long clienteId) {
-        EntityTransaction transaction = entityManager.getTransaction();
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
         try {
-            transaction.begin();
+            tx.begin();
 
-            ClienteEntity cliente = entityManager.find(ClienteEntity.class, clienteId);
-
-            if (cliente == null) throw new RuntimeException("Cliente não encontrado!");
+            ClienteEntity cliente = em.find(ClienteEntity.class, clienteId);
+            if (cliente == null)
+                throw new RuntimeException("Cliente não encontrado!");
 
             PedidoEntity pedido = new PedidoEntity();
             pedido.setCliente(cliente);
             pedido.setDataHora(LocalDateTime.now());
             pedido.setStatus("ABERTO");
 
-            pedidoRepository.salvar(pedido);
+            em.persist(pedido);
 
-            transaction.commit();
+            tx.commit();
             return pedido;
+
         } catch (Exception e) {
-            if (transaction.isActive()) transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
+    // CALCULAR TOTAL (CORRIGIDO)
     public BigDecimal calcularTotal(Long pedidoId) {
-        PedidoEntity pedido = entityManager.find(PedidoEntity.class, pedidoId);
+        EntityManager em = emf.createEntityManager();
 
-        if (pedido == null) {
-            return BigDecimal.ZERO;
+        try {
+            PedidoEntity pedido = em.createQuery("""
+                SELECT p FROM PedidoEntity p
+                LEFT JOIN FETCH p.itens i
+                LEFT JOIN FETCH i.produto
+                WHERE p.id = :id
+            """, PedidoEntity.class)
+                    .setParameter("id", pedidoId)
+                    .getSingleResult();
+
+            if (pedido.getItens() == null || pedido.getItens().isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+
+            return pedido.getItens().stream()
+                    .filter(i -> i.getPrecoUnitario() != null && i.getQuantidade() != null)
+                    .map(i -> i.getPrecoUnitario().multiply(i.getQuantidade()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        } finally {
+            em.close();
         }
-
-        BigDecimal total = BigDecimal.ZERO;
-
-        entityManager.refresh(pedido);
-
-        for (ItemPedidoEntity item : pedido.getItens()) {
-            // Matemática: Quantidade * Preço Unitário
-            BigDecimal subtotal = item.getQuantidade().multiply(item.getPrecoUnitario());
-            total = total.add(subtotal);
-        }
-        return total;
     }
 
+    // CANCELAR PEDIDO
     public void cancelarPedido(Long pedidoId) {
-        EntityTransaction transaction = entityManager.getTransaction();
-        try {
-            transaction.begin();
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
 
-            PedidoEntity pedido = pedidoRepository.buscarPorId(pedidoId)
-                    .orElseThrow(() -> new RuntimeException("Pedido não encontrado!"));
-            if ("CANCELADO".equals(pedido.getStatus())) {
-                throw new RuntimeException("Este pedido já está cancelado!");
-            }
+        try {
+            tx.begin();
+
+            PedidoEntity pedido = em.find(PedidoEntity.class, pedidoId);
+            if (pedido == null)
+                throw new RuntimeException("Pedido não encontrado!");
 
             if ("PAGO".equals(pedido.getStatus())) {
-                throw new RuntimeException("Não pode cancelar o que já foi pago!");
+                throw new RuntimeException("Pedido já pago não pode ser cancelado!");
             }
+
             pedido.setStatus("CANCELADO");
 
-            transaction.commit();
+            tx.commit();
+
         } catch (Exception e) {
-            if (transaction.isActive()) transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw e;
+        } finally {
+            em.close();
         }
     }
 
-    public PedidoEntity buscarCompleto(Long id) {
-        String jpql = "SELECT p FROM PedidoEntity p " +
-                "JOIN FETCH p.cliente " +
-                "WHERE p.id = :id";
+    // PAGAR PEDIDO
+    public void pagarPedido(Long pedidoId) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
         try {
-            return entityManager.createQuery(jpql, PedidoEntity.class)
+            tx.begin();
+            PedidoEntity pedido = em.find(PedidoEntity.class, pedidoId);
+
+            if (pedido == null) {
+                throw new RuntimeException("Pedido não encontrado!");
+            }
+
+            if (!"ABERTO".equals(pedido.getStatus())) {
+                throw new RuntimeException("Pedido não pode ser pago!");
+            }
+
+            pedido.setStatus("PAGO");
+            tx.commit();
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
+
+    // BUSCAR COMPLETO
+    public PedidoEntity buscarCompleto(Long id) {
+        EntityManager em = emf.createEntityManager();
+
+        try {
+            return em.createQuery("""
+                SELECT p FROM PedidoEntity p
+                JOIN FETCH p.cliente
+                LEFT JOIN FETCH p.itens i
+                LEFT JOIN FETCH i.produto
+                WHERE p.id = :id
+            """, PedidoEntity.class)
                     .setParameter("id", id)
                     .getSingleResult();
+
+        } finally {
+            em.close();
+        }
+    }
+
+    public void adicionarItem(Long pedidoId, Long produtoId, BigDecimal qtd) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            tx.begin();
+            PedidoEntity pedido = em.find(PedidoEntity.class, pedidoId);
+            ProdutoEntity produto = em.find(ProdutoEntity.class, produtoId);
+
+            if (pedido == null || produto == null) {
+                throw new RuntimeException("Pedido ou Produto não encontrado!");
+            }
+
+            ItemPedidoEntity item = new ItemPedidoEntity();
+            item.setPedido(pedido);
+            item.setProduto(produto);
+            item.setQuantidade(qtd);
+            item.setPrecoUnitario(produto.getPreco());
+
+            item.setPedido(pedido);
+            em.persist(item);
+            tx.commit();
         } catch (Exception e) {
-            throw new RuntimeException("Pedido não encontrado!");
+            if (tx.isActive()) tx.rollback();
+            throw e;
+        } finally {
+            em.close();
         }
     }
 }

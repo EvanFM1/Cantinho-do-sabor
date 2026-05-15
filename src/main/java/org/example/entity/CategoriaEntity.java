@@ -20,6 +20,11 @@ public class CategoriaEntity {
     @Column(length = 500)
     private String descricao;
 
+    @Override
+    public String toString() {
+        return nome;
+    }
+
     // Getters e Setters
     public Long getId() {
         return id;

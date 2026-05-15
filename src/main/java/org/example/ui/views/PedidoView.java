@@ -1,7 +1,9 @@
 package org.example.ui.views;
 
 import org.example.entity.PedidoEntity;
+import org.example.entity.ProdutoEntity;
 import org.example.service.PedidoService;
+import org.example.service.ProdutoService;
 import org.example.ui.Async;
 import org.example.ui.Events;
 import org.example.ui.UI;
@@ -10,26 +12,38 @@ import org.example.ui.theme.Theme;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 public class PedidoView extends JPanel {
     private final PedidoService pedidoService;
+    private final ProdutoService produtoService;
+
     private DefaultListModel<String> listModel;
     private JList<String> listaPedidos;
+
     private JTextField clienteIdField;
     private JTextField pedidoIdField;
+    private JTextField quantidadeField;
+
+    private JComboBox<ProdutoEntity> produtoCombo;
 
     private JButton criarButton;
     private JButton cancelarButton;
+    private JButton pagarButton;
     private JButton listarButton;
     private JButton totalButton;
+    private JButton adicionarItemButton;
 
     private List<PedidoEntity> cache;
 
-    public PedidoView(PedidoService pedidoService) {
+    public PedidoView(PedidoService pedidoService, ProdutoService produtoService) {
         this.pedidoService = pedidoService;
+        this.produtoService = produtoService;
+
         initComponents();
         loadPedidos();
+        loadProdutos();
     }
 
     private void initComponents() {
@@ -37,278 +51,140 @@ public class PedidoView extends JPanel {
         setBackground(Theme.BACKGROUND);
 
         /*
-        Lista
+        LISTA
          */
         listModel = new DefaultListModel<>();
         listaPedidos = new JList<>(listModel);
         listaPedidos.setFont(Theme.TEXT_FONT);
-        listaPedidos.setSelectionMode(
-                ListSelectionModel.SINGLE_SELECTION
-        );
+
         JScrollPane scroll = new JScrollPane(listaPedidos);
         scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         /*
-        Campos
+        CAMPOS
          */
         clienteIdField = createField("Cliente ID");
-        pedidoIdField = createField("Pedido ID");
+        pedidoIdField = createField("Pedido ID (selecionado)");
+        quantidadeField = createField("Quantidade");
 
         /*
-        Botões
+        PRODUTO COMBO
+         */
+        produtoCombo = new JComboBox<>();
+        produtoCombo.setBorder(BorderFactory.createTitledBorder("Produto"));
+
+        /*
+        BOTÕES
          */
         criarButton = UI.button("Criar Pedido", b -> {
             b.setBackground(Theme.PRIMARY);
             b.setForeground(Color.WHITE);
         });
 
-        cancelarButton = UI.button("Cancelar Pedido", b -> {
+        pagarButton = UI.button("Pagar", b -> {
+            b.setBackground(new Color(0, 120, 0));
+            b.setForeground(Color.WHITE);
+        });
+
+        cancelarButton = UI.button("Cancelar", b -> {
             b.setBackground(new Color(200, 60, 60));
             b.setForeground(Color.WHITE);
         });
 
-        listarButton = UI.button("Atualizar Lista", b -> {
+        adicionarItemButton = UI.button("Adicionar Item", b -> {
+            b.setBackground(new Color(80, 80, 200));
+            b.setForeground(Color.WHITE);
+        });
+
+        listarButton = UI.button("Atualizar", b -> {
             b.setBackground(Theme.PRIMARY_DARK);
             b.setForeground(Color.WHITE);
         });
 
-        totalButton = UI.button("Calcular Total", b -> {
+        totalButton = UI.button("Total", b -> {
             b.setBackground(new Color(70, 70, 70));
             b.setForeground(Color.WHITE);
         });
 
         /*
-        Formulário
+        FORM
          */
         JPanel form = UI.panel(p -> {
-                    p.setLayout(new GridLayout(10, 1, 5, 5));
+                    p.setLayout(new GridLayout(14, 1, 5, 5));
                     p.setBackground(Theme.SURFACE);
-
-                    p.setBorder(
-                            new EmptyBorder(20, 20, 20, 20)
-                    );
-
-                    p.setPreferredSize(
-                            new Dimension(300, 0)
-                    );
+                    p.setBorder(new EmptyBorder(20, 20, 20, 20));
+                    p.setPreferredSize(new Dimension(320, 0));
                 },
                 clienteIdField,
                 pedidoIdField,
+                produtoCombo,
+                quantidadeField,
                 criarButton,
+                adicionarItemButton,
+                pagarButton,
                 cancelarButton,
                 totalButton,
                 listarButton
         );
 
-        /*
-        Layout
-         */
         add(scroll, BorderLayout.CENTER);
         add(form, BorderLayout.EAST);
 
         /*
-        Eventos Mouse
+        EVENTS
          */
-        Events.mouse(criarButton, mouse ->
-                mouse.onClicked(e -> criarPedido())
-        );
+        criarButton.addActionListener(e -> criarPedido());
+        pagarButton.addActionListener(e -> pagarPedido());
+        cancelarButton.addActionListener(e -> cancelarPedido());
+        totalButton.addActionListener(e -> calcularTotal());
+        listarButton.addActionListener(e -> {
+            loadPedidos();
+            loadProdutos();
+        });
+        adicionarItemButton.addActionListener(e -> adicionarItem());
 
-        Events.mouse(cancelarButton, mouse ->
-                mouse.onClicked(e -> cancelarPedido())
-        );
-
-        Events.mouse(listarButton, mouse ->
-                mouse.onClicked(e -> loadPedidos())
-        );
-
-        Events.mouse(totalButton, mouse ->
-                mouse.onClicked(e -> calcularTotal())
-        );
-
-        /*
-        Selecionar pedido
-         */
         listaPedidos.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 preencherCampos();
             }
         });
-
-        /*
-        Deseleciona ao clicar fora
-         */
-        Events.mouse(this, mouse -> {
-            mouse.onPressed(event -> {
-                Component clicked =
-                        SwingUtilities.getDeepestComponentAt(
-                                PedidoView.this,
-                                event.getX(),
-                                event.getY()
-                        );
-
-                if (clicked == null ||
-                        !SwingUtilities.isDescendingFrom(
-                                clicked,
-                                listaPedidos
-                        )) {
-                    listaPedidos.clearSelection();
-                    clearFields();
-                }
-            });
-        });
-
-        /*
-        Atalhos teclado
-         */
-        Events.keyBinder(this, key -> {
-            // ENTER -> criar pedido
-            key.on("ENTER", this::criarPedido);
-
-            // DELETE -> cancelar pedido
-            key.on("DELETE", () -> {
-
-                if (listaPedidos.getSelectedIndex() >= 0) {
-                    cancelarPedido();
-                }
-            });
-
-            // CTRL + R -> atualizar
-            key.on("ctrl R", this::loadPedidos);
-
-            // CTRL + T -> calcular total
-            key.on("ctrl T", () -> {
-
-                if (listaPedidos.getSelectedIndex() >= 0) {
-                    calcularTotal();
-                }
-            });
-
-            // ESC -> limpar seleção
-            key.on("ESCAPE", () -> {
-                listaPedidos.clearSelection();
-                clearFields();
-            });
-        });
     }
 
     private JTextField createField(String title) {
         JTextField field = new JTextField();
-
-        field.setBorder(
-                BorderFactory.createTitledBorder(title)
-        );
+        field.setBorder(BorderFactory.createTitledBorder(title));
         field.setFont(Theme.TEXT_FONT);
         return field;
     }
 
     /*
-    Criar pedido
+    CARREGAR PRODUTOS
+     */
+    private void loadProdutos() {
+        System.out.println("CARREGANDO PRODUTOS...");
+        System.out.println(produtoService.listarProdutos().size());
+        produtoCombo.removeAllItems();
+
+        List<ProdutoEntity> produtos = produtoService.listarProdutos();
+        for (ProdutoEntity p : produtos) {
+            produtoCombo.addItem(p);
+        }
+    }
+
+    /*
+    CRIAR PEDIDO
      */
     private void criarPedido() {
         try {
-            String clienteIdText =
-                    clienteIdField.getText().trim();
-
-            if (clienteIdText.isBlank()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Informe o ID do cliente!",
-                        "Validação",
-                        JOptionPane.WARNING_MESSAGE
-                );
-                return;
-            }
-
-            Long clienteId =
-                    Long.parseLong(clienteIdText);
+            Long clienteId = Long.parseLong(clienteIdField.getText().trim());
 
             Async.compute(
-                    () -> {
-                        pedidoService.criarPedido(clienteId);
-                        return null;
-                    },
-
-                    success -> {
-                        JOptionPane.showMessageDialog(
-                                this,
-                                "Pedido criado!"
-                        );
-                        clearFields();
+                    () -> pedidoService.criarPedido(clienteId),
+                    r -> {
+                        JOptionPane.showMessageDialog(this, "Pedido criado!");
                         loadPedidos();
-                    },
-                    error -> showError(error)
-            );
-        } catch (Exception e) {
-            showError(e);
-        }
-    }
-
-    /*
-    Cancelar pedido
-     */
-    private void cancelarPedido() {
-        try {
-            String pedidoIdText =
-                    pedidoIdField.getText().trim();
-
-            if (pedidoIdText.isBlank()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Informe o ID do pedido!",
-                        "Validação",
-                        JOptionPane.WARNING_MESSAGE
-                );
-                return;
-            }
-
-            Long id = Long.parseLong(pedidoIdText);
-            Async.compute(
-                    () -> {
-                        pedidoService.cancelarPedido(id);
-                        return null;
-                    },
-
-                    success -> {
-                        JOptionPane.showMessageDialog(
-                                this,
-                                "Pedido cancelado!"
-                        );
                         clearFields();
-                        loadPedidos();
                     },
-                    error -> showError(error)
-            );
-        } catch (Exception e) {
-            showError(e);
-        }
-    }
-
-    /*
-    Calcular total
-     */
-    private void calcularTotal() {
-        try {
-            String pedidoIdText =
-                    pedidoIdField.getText().trim();
-
-            if (pedidoIdText.isBlank()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Informe o ID do pedido!",
-                        "Validação",
-                        JOptionPane.WARNING_MESSAGE
-                );
-                return;
-            }
-
-            Long id = Long.parseLong(pedidoIdText);
-            Async.compute(
-                    () -> pedidoService.calcularTotal(id),
-
-                    total -> JOptionPane.showMessageDialog(
-                            this,
-                            "Total: R$ " + total
-                    ),
                     this::showError
             );
         } catch (Exception e) {
@@ -317,23 +193,116 @@ public class PedidoView extends JPanel {
     }
 
     /*
-    Carregar pedidos
+    ADICIONAR ITEM
+     */
+    private void adicionarItem() {
+        try {
+            Long pedidoId = Long.parseLong(pedidoIdField.getText().trim());
+            ProdutoEntity produto = (ProdutoEntity) produtoCombo.getSelectedItem();
+            BigDecimal qtd = new BigDecimal(quantidadeField.getText().trim());
+
+            if (produto == null) {
+                throw new RuntimeException("Selecione um produto!");
+            }
+
+            Async.compute(
+                    () -> {
+                        pedidoService.adicionarItem(
+                                pedidoId,
+                                produto.getId(),
+                                qtd
+                        );
+                        return null;
+                    },
+                    r -> {
+                        JOptionPane.showMessageDialog(this, "Item adicionado!");
+                        loadPedidos();
+                    },
+                    this::showError
+            );
+        } catch (Exception e) {
+            showError(e);
+        }
+    }
+
+    /*
+    PAGAR
+     */
+    private void pagarPedido() {
+        try {
+            Long id = Long.parseLong(pedidoIdField.getText().trim());
+
+            Async.compute(
+                    () -> {
+                        pedidoService.pagarPedido(id);
+                        return null;
+                    },
+                    r -> {
+                        JOptionPane.showMessageDialog(this, "Pago!");
+                        loadPedidos();
+                    },
+                    this::showError
+            );
+        } catch (Exception e) {
+            showError(e);
+        }
+    }
+
+    /*
+    CANCELAR
+     */
+    private void cancelarPedido() {
+        try {
+            Long id = Long.parseLong(pedidoIdField.getText().trim());
+
+            Async.compute(
+                    () -> {
+                        pedidoService.cancelarPedido(id);
+                        return null;
+                    },
+                    r -> {
+                        JOptionPane.showMessageDialog(this, "Cancelado!");
+                        loadPedidos();
+                    },
+                    this::showError
+            );
+        } catch (Exception e) {
+            showError(e);
+        }
+    }
+
+    /*
+    TOTAL
+     */
+    private void calcularTotal() {
+        try {
+            Long id = Long.parseLong(pedidoIdField.getText().trim());
+
+            Async.compute(
+                    () -> pedidoService.calcularTotal(id),
+                    total -> JOptionPane.showMessageDialog(this, "Total: R$ " + total.intValue()),
+                    this::showError
+            );
+        } catch (Exception e) {
+            showError(e);
+        }
+    }
+
+    /*
+    LISTAR
      */
     private void loadPedidos() {
         listModel.clear();
-
         Async.compute(
                 pedidoService::listarPedidosPendentes,
                 pedidos -> {
-
                     cache = pedidos;
+
                     for (PedidoEntity p : pedidos) {
                         listModel.addElement(
-                                "• ID: " + p.getId()
-                                        + " | Cliente: "
-                                        + p.getCliente().getNome()
-                                        + " | Status: "
-                                        + p.getStatus()
+                                "ID: " + p.getId()
+                                        + " | Cliente: " + p.getCliente().getNome()
+                                        + " | Status: " + p.getStatus()
                         );
                     }
                 },
@@ -342,39 +311,26 @@ public class PedidoView extends JPanel {
     }
 
     /*
-    Preenche campos ao selecionar
+    SELEÇÃO
      */
     private void preencherCampos() {
         int index = listaPedidos.getSelectedIndex();
 
-        if (index < 0 || cache == null) {
-            return;
-        }
+        if (index < 0 || cache == null) return;
 
-        PedidoEntity pedido = cache.get(index);
-        pedidoIdField.setText(
-                String.valueOf(pedido.getId())
-        );
-
-        clienteIdField.setText(
-                String.valueOf(
-                        pedido.getCliente().getId()
-                )
-        );
+        PedidoEntity p = cache.get(index);
+        pedidoIdField.setText(String.valueOf(p.getId()));
+        clienteIdField.setText(String.valueOf(p.getCliente().getId()));
     }
 
     private void clearFields() {
         clienteIdField.setText("");
         pedidoIdField.setText("");
+        quantidadeField.setText("");
         listaPedidos.clearSelection();
     }
 
     private void showError(Throwable e) {
-        JOptionPane.showMessageDialog(
-                this,
-                e.getMessage(),
-                "Erro",
-                JOptionPane.ERROR_MESSAGE
-        );
+        JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
     }
 }

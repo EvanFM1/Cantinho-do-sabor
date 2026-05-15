@@ -51,6 +51,12 @@ public class DashboardView extends JFrame {
         setSize(1280, 720);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        setIconImage(
+                new ImageIcon(
+                        getClass().getResource("/assets/icon.png")
+                ).getImage()
+        );
     }
 
     private boolean isAdmin() {
@@ -58,34 +64,33 @@ public class DashboardView extends JFrame {
     }
 
     private void initComponents() {
-        // 1. Criar a Sidebar Customizada
+        // Criar a Sidebar Customizada
         Sidebar sidebar = new Sidebar();
 
-        // 2. Painel de Conteúdo com CardLayout
+        // Painel de Conteúdo com CardLayout
         contentPanel = new JPanel(new CardLayout());
         contentPanel.setBackground(Theme.BACKGROUND);
 
-        // 3. Adicionar as telas ao CardLayout
+        // Adicionar as telas ao CardLayout
         contentPanel.add(createPanel("Bem-vindo, " + usuario.getLogin() + "!"), "0");
         contentPanel.add(new ClienteView(clienteService), "1");
-        contentPanel.add(new PedidoView(pedidoService), "2");
+        contentPanel.add(new PedidoView(pedidoService, produtoService), "2");
         contentPanel.add(new ProdutoView(produtoService, categoriaService), "3");
-        contentPanel.add(createPanel("Configurações do Sistema"), "4");
+        contentPanel.add(new CategoriaView(categoriaService), "4");
+        contentPanel.add(createPanel("Configurações do Sistema"), "5");
 
-        // 4. Configurar itens da Sidebar (Menus)
-        sidebar.addMenuItem("Início",        () -> showPanel("0"));
+        sidebar.addMenuItem("Início", () -> showPanel("0"));
 
-        // Bloqueio de segurança para Admin (Item 33/34)
         if (isAdmin()) {
-            sidebar.addMenuItem("Clientes",  () -> showPanel("1"));
+            sidebar.addMenuItem("Clientes", () -> showPanel("1"));
         }
 
-        sidebar.addMenuItem("Pedidos",       () -> showPanel("2"));
-        sidebar.addMenuItem("Produtos",      () -> showPanel("3"));
-        sidebar.addMenuItem("Ajustes",       () -> showPanel("4"));
-        sidebar.addMenuItem("Sair",          this::logout);
+        sidebar.addMenuItem("Pedidos", () -> showPanel("2"));
+        sidebar.addMenuItem("Produtos", () -> showPanel("3"));
+        sidebar.addMenuItem("Categorias", () -> showPanel("4"));
+        sidebar.addMenuItem("Ajustes", () -> showPanel("5"));
+        sidebar.addMenuItem("Sair", this::logout);
 
-        // 5. Montagem da Estrutura Principal
         // Painel que agrupa a Topbar e o Conteúdo
         JPanel mainContent = new JPanel(new BorderLayout());
         mainContent.add(new Topbar("Painel Administrativo"), BorderLayout.NORTH);

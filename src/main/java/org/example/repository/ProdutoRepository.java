@@ -28,7 +28,10 @@ public class ProdutoRepository {
 
     public List<ProdutoEntity> listarTodos() {
         return entityManager
-                .createQuery("SELECT p FROM ProdutoEntity p", ProdutoEntity.class)
+                .createQuery(
+                        "SELECT p FROM ProdutoEntity p JOIN FETCH p.categoria",
+                        ProdutoEntity.class
+                )
                 .getResultList();
     }
 
