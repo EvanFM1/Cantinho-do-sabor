@@ -1,11 +1,7 @@
 package org.example.ui.views;
 
 import org.example.entity.UsuarioEntity;
-import org.example.service.ClienteService;
-import org.example.service.PedidoService;
-import org.example.service.ProdutoService;
-import org.example.service.UsuarioService;
-import org.example.service.CategoriaService;
+import org.example.service.*;
 import org.example.ui.UI;
 import org.example.ui.components.Sidebar;
 import org.example.ui.components.Topbar;

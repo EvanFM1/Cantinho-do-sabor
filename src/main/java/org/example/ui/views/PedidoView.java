@@ -2,27 +2,26 @@ package org.example.ui.views;
 
 import org.example.entity.PedidoEntity;
 import org.example.service.PedidoService;
+import org.example.ui.Async;
+import org.example.ui.Events;
 import org.example.ui.UI;
 import org.example.ui.theme.Theme;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 
 public class PedidoView extends JPanel {
     private final PedidoService pedidoService;
-
     private DefaultListModel<String> listModel;
     private JList<String> listaPedidos;
-
     private JTextField clienteIdField;
     private JTextField pedidoIdField;
-
     private JButton criarButton;
     private JButton cancelarButton;
     private JButton listarButton;
     private JButton totalButton;
-
     private List<PedidoEntity> cache;
 
     public PedidoView(PedidoService pedidoService) {
@@ -41,8 +40,11 @@ public class PedidoView extends JPanel {
         listModel = new DefaultListModel<>();
         listaPedidos = new JList<>(listModel);
         listaPedidos.setFont(Theme.TEXT_FONT);
-
+        listaPedidos.setSelectionMode(
+                ListSelectionModel.SINGLE_SELECTION
+        );
         JScrollPane scroll = new JScrollPane(listaPedidos);
+        scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         /*
         Campos
@@ -58,18 +60,18 @@ public class PedidoView extends JPanel {
             b.setForeground(Color.WHITE);
         });
 
-        cancelarButton = UI.button("Cancelar", b -> {
-            b.setBackground(Color.RED);
+        cancelarButton = UI.button("Cancelar Pedido", b -> {
+            b.setBackground(new Color(200, 60, 60));
             b.setForeground(Color.WHITE);
         });
 
-        listarButton = UI.button("Atualizar", b -> {
+        listarButton = UI.button("Atualizar Lista", b -> {
             b.setBackground(Theme.PRIMARY_DARK);
             b.setForeground(Color.WHITE);
         });
 
         totalButton = UI.button("Calcular Total", b -> {
-            b.setBackground(new Color(80, 80, 80));
+            b.setBackground(new Color(70, 70, 70));
             b.setForeground(Color.WHITE);
         });
 
@@ -77,100 +79,293 @@ public class PedidoView extends JPanel {
         Formulário
          */
         JPanel form = UI.panel(p -> {
-                    p.setLayout(new GridLayout(8, 1, 5, 5));
+                    p.setLayout(new GridLayout(10, 1, 5, 5));
                     p.setBackground(Theme.SURFACE);
+
+                    p.setBorder(
+                            new EmptyBorder(20, 20, 20, 20)
+                    );
+
+                    p.setPreferredSize(
+                            new Dimension(300, 0)
+                    );
                 },
                 clienteIdField,
                 pedidoIdField,
                 criarButton,
                 cancelarButton,
-                listarButton,
-                totalButton
+                totalButton,
+                listarButton
         );
 
+        /*
+        Layout
+         */
         add(scroll, BorderLayout.CENTER);
         add(form, BorderLayout.EAST);
 
         /*
-        Eventos
+        Eventos Mouse
          */
-        criarButton.addActionListener(e -> criarPedido());
-        cancelarButton.addActionListener(e -> cancelarPedido());
-        listarButton.addActionListener(e -> loadPedidos());
-        totalButton.addActionListener(e -> calcularTotal());
+        Events.mouse(criarButton, mouse ->
+                mouse.onClicked(e -> criarPedido())
+        );
+
+        Events.mouse(cancelarButton, mouse ->
+                mouse.onClicked(e -> cancelarPedido())
+        );
+
+        Events.mouse(listarButton, mouse ->
+                mouse.onClicked(e -> loadPedidos())
+        );
+
+        Events.mouse(totalButton, mouse ->
+                mouse.onClicked(e -> calcularTotal())
+        );
+
+        /*
+        Selecionar pedido
+         */
+        listaPedidos.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                preencherCampos();
+            }
+        });
+
+        /*
+        Deseleciona ao clicar fora
+         */
+        Events.mouse(this, mouse -> {
+            mouse.onPressed(event -> {
+                Component clicked =
+                        SwingUtilities.getDeepestComponentAt(
+                                PedidoView.this,
+                                event.getX(),
+                                event.getY()
+                        );
+
+                if (clicked == null ||
+                        !SwingUtilities.isDescendingFrom(
+                                clicked,
+                                listaPedidos
+                        )) {
+                    listaPedidos.clearSelection();
+                    clearFields();
+                }
+            });
+        });
+
+        /*
+        Atalhos teclado
+         */
+        Events.keyBinder(this, key -> {
+            // ENTER -> criar pedido
+            key.on("ENTER", this::criarPedido);
+
+            // DELETE -> cancelar pedido
+            key.on("DELETE", () -> {
+
+                if (listaPedidos.getSelectedIndex() >= 0) {
+                    cancelarPedido();
+                }
+            });
+
+            // CTRL + R -> atualizar
+            key.on("ctrl R", this::loadPedidos);
+
+            // CTRL + T -> calcular total
+            key.on("ctrl T", () -> {
+
+                if (listaPedidos.getSelectedIndex() >= 0) {
+                    calcularTotal();
+                }
+            });
+
+            // ESC -> limpar seleção
+            key.on("ESCAPE", () -> {
+                listaPedidos.clearSelection();
+                clearFields();
+            });
+        });
     }
 
     private JTextField createField(String title) {
         JTextField field = new JTextField();
-        field.setBorder(BorderFactory.createTitledBorder(title));
+        field.setBorder(
+                BorderFactory.createTitledBorder(title)
+        );
         field.setFont(Theme.TEXT_FONT);
         return field;
     }
 
+    /*
+    Criar pedido
+     */
     private void criarPedido() {
         try {
-            if (clienteIdField.getText().isBlank()) {
-                throw new RuntimeException("Informe o ID do cliente");
+            String clienteIdText =
+                    clienteIdField.getText().trim();
+            if (clienteIdText.isBlank()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Informe o ID do cliente!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
             }
 
-            Long clienteId = Long.parseLong(clienteIdField.getText());
-            pedidoService.criarPedido(clienteId);
-            JOptionPane.showMessageDialog(this, "Pedido criado!");
-            loadPedidos();
-        } catch (Exception e) {
-            showError(e);
-        }
-    }
+            Long clienteId =
+                    Long.parseLong(clienteIdText);
 
-    private void cancelarPedido() {
-        try {
-            if (pedidoIdField.getText().isBlank()) {
-                throw new RuntimeException("Informe o ID do pedido");
-            }
+            Async.compute(
+                    () -> {
+                        pedidoService.criarPedido(clienteId);
+                        return null;
+                    },
 
-            Long id = Long.parseLong(pedidoIdField.getText());
-            pedidoService.cancelarPedido(id);
-            JOptionPane.showMessageDialog(this, "Pedido cancelado!");
-            loadPedidos();
-        } catch (Exception e) {
-            showError(e);
-        }
-    }
-
-    private void calcularTotal() {
-        try {
-            if (pedidoIdField.getText().isBlank()) {
-                throw new RuntimeException("Informe o ID do pedido");
-            }
-
-            Long id = Long.parseLong(pedidoIdField.getText());
-            var total = pedidoService.calcularTotal(id);
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Total: R$ " + total
+                    success -> {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Pedido criado!"
+                        );
+                        clearFields();
+                        loadPedidos();
+                    },
+                    error -> showError(error)
             );
         } catch (Exception e) {
             showError(e);
         }
     }
 
+    /*
+    Cancelar pedido
+     */
+    private void cancelarPedido() {
+        try {
+            String pedidoIdText =
+                    pedidoIdField.getText().trim();
+
+            if (pedidoIdText.isBlank()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Informe o ID do pedido!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            Long id = Long.parseLong(pedidoIdText);
+            Async.compute(
+                    () -> {
+                        pedidoService.cancelarPedido(id);
+                        return null;
+                    },
+
+                    success -> {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Pedido cancelado!"
+                        );
+                        clearFields();
+                        loadPedidos();
+                    },
+                    error -> showError(error)
+            );
+        } catch (Exception e) {
+            showError(e);
+        }
+    }
+
+    /*
+    Calcular total
+     */
+    private void calcularTotal() {
+        try {
+            String pedidoIdText =
+                    pedidoIdField.getText().trim();
+
+            if (pedidoIdText.isBlank()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Informe o ID do pedido!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            Long id = Long.parseLong(pedidoIdText);
+            Async.compute(
+                    () -> pedidoService.calcularTotal(id),
+                    total -> JOptionPane.showMessageDialog(
+                            this,
+                            "Total: R$ " + total
+                    ),
+                    this::showError
+            );
+        } catch (Exception e) {
+            showError(e);
+        }
+    }
+
+    /*
+    Carregar pedidos
+     */
     private void loadPedidos() {
         listModel.clear();
 
-        List<PedidoEntity> pedidos =
-                pedidoService.listarPedidosPendentes();
-        cache = pedidos;
+        Async.compute(
+                pedidoService::listarPedidosPendentes,
 
-        for (PedidoEntity p : pedidos) {
-            listModel.addElement(
-                    "ID: " + p.getId()
-                            + " | Cliente: " + p.getCliente().getNome()
-                            + " | Status: " + p.getStatus()
-            );
-        }
+                pedidos -> {
+                    cache = pedidos;
+
+                    for (PedidoEntity p : pedidos) {
+                        listModel.addElement(
+                                "• ID: " + p.getId()
+                                        + " | Cliente: "
+                                        + p.getCliente().getNome()
+                                        + " | Status: "
+                                        + p.getStatus()
+                        );
+                    }
+                },
+                this::showError
+        );
     }
 
-    private void showError(Exception e) {
+    /*
+    Preenche campos ao selecionar
+     */
+    private void preencherCampos() {
+        int index = listaPedidos.getSelectedIndex();
+
+        if (index < 0 || cache == null) {
+            return;
+        }
+
+        PedidoEntity pedido = cache.get(index);
+        pedidoIdField.setText(
+                String.valueOf(pedido.getId())
+        );
+
+        clienteIdField.setText(
+                String.valueOf(
+                        pedido.getCliente().getId()
+                )
+        );
+    }
+
+    private void clearFields() {
+        clienteIdField.setText("");
+        pedidoIdField.setText("");
+        listaPedidos.clearSelection();
+    }
+
+    private void showError(Throwable e) {
         JOptionPane.showMessageDialog(
                 this,
                 e.getMessage(),

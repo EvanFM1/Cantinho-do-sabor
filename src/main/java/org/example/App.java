@@ -33,7 +33,6 @@ public final class App {
     private App() {
     }
     public static void start() {
-
         inicializarBanco();
         inicializarJPA();
         inicializarServices();

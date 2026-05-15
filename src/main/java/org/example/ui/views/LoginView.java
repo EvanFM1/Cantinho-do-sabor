@@ -18,21 +18,21 @@ public class LoginView extends JFrame {
     private final ClienteService clienteService;
     private final PedidoService pedidoService;
     private final ProdutoService produtoService;
-    private final CategoriaService categoriaService; // Adicionado para passar ao Dashboard
+    private final CategoriaService categoriaService;
 
     private JPanel rootPanel;
-    private CardPanel cardPanel; // Agora usa o seu componente CardPanel
+    private CardPanel cardPanel;
 
     private JTextField loginField;
     private JPasswordField passwordField;
-    private PrimaryButton loginButton; // Usando seu PrimaryButton
+    private PrimaryButton loginButton;
 
     public LoginView(
             UsuarioService usuarioService,
             ClienteService clienteService,
             PedidoService pedidoService,
             ProdutoService produtoService,
-            CategoriaService categoriaService // Recebe o service aqui
+            CategoriaService categoriaService
     ) {
         this.usuarioService = usuarioService;
         this.clienteService = clienteService;
@@ -53,6 +53,12 @@ public class LoginView extends JFrame {
         setSize(1200, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        setIconImage(
+                new ImageIcon(
+                        getClass().getResource("/assets/icon.png")
+                ).getImage()
+        );
     }
 
     private void initComponents() {
