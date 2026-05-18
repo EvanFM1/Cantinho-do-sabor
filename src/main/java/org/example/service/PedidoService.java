@@ -123,7 +123,7 @@ public class PedidoService {
         }
     }
 
-    // CALCULAR TOTAL (CORRIGIDO)
+    // CALCULAR TOTAL (FINALMENTE CORRIGIDO)
     public BigDecimal calcularTotal(Long pedidoId) {
         EntityManager em = emf.createEntityManager();
 
@@ -243,8 +243,9 @@ public class PedidoService {
             item.setProduto(produto);
             item.setQuantidade(qtd);
             item.setPrecoUnitario(produto.getPreco());
-
             em.persist(item);
+
+            pedido.getItens().add(item);
             tx.commit();
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();

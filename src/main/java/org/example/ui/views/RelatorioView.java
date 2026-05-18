@@ -1,6 +1,7 @@
 package org.example.ui.views;
 
 import org.example.service.PedidoService;
+import org.example.ui.UI;
 import org.example.ui.components.CardPanel;
 import org.example.ui.theme.Theme;
 import javax.swing.*;
@@ -31,7 +32,10 @@ public class RelatorioView extends JPanel {
         title.setFont(Theme.TITLE_FONT.deriveFont(28f));
         title.setForeground(Theme.PRIMARY);
 
-        JButton btnRefresh = new JButton("Atualizar Dados");
+        JButton btnRefresh = UI.button("Atualizar Dados", b -> {
+            b.setBackground(Theme.PRIMARY);
+            b.setForeground(Color.WHITE);
+        });
         btnRefresh.addActionListener(e -> atualizarRelatorio());
 
         header.add(title, BorderLayout.WEST);
