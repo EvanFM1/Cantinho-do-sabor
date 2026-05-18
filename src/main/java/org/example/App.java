@@ -6,7 +6,6 @@ import jakarta.persistence.Persistence;
 
 import org.example.service.CategoriaService;
 import org.example.service.ClienteService;
-import org.example.service.FuncionarioService;
 import org.example.service.ItemPedidoService;
 import org.example.service.PedidoService;
 import org.example.service.ProdutoService;
@@ -27,7 +26,6 @@ public final class App {
     private static ClienteService clienteService;
     private static CategoriaService categoriaService;
     private static ProdutoService produtoService;
-    private static FuncionarioService funcionarioService;
     private static PedidoService pedidoService;
     private static VendaService vendaService;
     private static ItemPedidoService itemPedidoService;
@@ -35,13 +33,16 @@ public final class App {
     private App() {
     }
     public static void start() {
-
         inicializarBanco();
         inicializarJPA();
         inicializarServices();
 
         SwingUtilities.invokeLater(() -> {
-            new LoginView(usuarioService);
+            new LoginView(usuarioService,
+                    clienteService,
+                    pedidoService,
+                    produtoService,
+                    categoriaService);
         });
     }
 
@@ -88,19 +89,16 @@ public final class App {
                 new UsuarioService(entityManager);
 
         clienteService =
-                new ClienteService(entityManager);
+                new ClienteService(entityManagerFactory);
 
         categoriaService =
-                new CategoriaService(entityManager);
+                new CategoriaService(entityManagerFactory);
 
         produtoService =
-                new ProdutoService(entityManager);
-
-        funcionarioService =
-                new FuncionarioService(entityManager);
+                new ProdutoService(entityManagerFactory);
 
         pedidoService =
-                new PedidoService(entityManager);
+                new PedidoService(entityManagerFactory);
 
         vendaService =
                 new VendaService(entityManager);
@@ -145,9 +143,6 @@ public final class App {
         return produtoService;
     }
 
-    public static FuncionarioService getFuncionarioService() {
-        return funcionarioService;
-    }
 
     public static PedidoService getPedidoService() {
         return pedidoService;

@@ -28,7 +28,10 @@ public class ClienteRepository {
 
     public List<ClienteEntity> listarTodos() {
         return entityManager
-                .createQuery("SELECT c FROM ClienteEntity c", ClienteEntity.class)
+                .createQuery(
+                        "SELECT c FROM ClienteEntity c ORDER BY c.id ASC",
+                        ClienteEntity.class
+                )
                 .getResultList();
     }
 

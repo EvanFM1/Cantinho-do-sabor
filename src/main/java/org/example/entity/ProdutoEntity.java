@@ -27,6 +27,11 @@ public class ProdutoEntity {
     @JoinColumn(name = "fk_categoria_id", nullable = false)
     private CategoriaEntity categoria;
 
+    @Override
+    public String toString() {
+        return nome;
+    }
+
     public ProdutoEntity() {}
 
     public Long getId() {

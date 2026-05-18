@@ -28,7 +28,12 @@ public class PedidoRepository {
 
     public List<PedidoEntity> listarTodos() {
         return entityManager
-                .createQuery("SELECT p FROM PedidoEntity p", PedidoEntity.class)
+                .createQuery(
+                        "SELECT DISTINCT p FROM PedidoEntity p\n" +
+                                "JOIN FETCH p.cliente\n" +
+                                "LEFT JOIN FETCH p.itens i\n" +
+                                "LEFT JOIN FETCH i.produto",
+                        PedidoEntity.class)
                 .getResultList();
     }
 
