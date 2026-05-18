@@ -185,8 +185,14 @@ public class PedidoService {
 
         try {
             tx.begin();
-            PedidoEntity pedido = em.find(PedidoEntity.class, pedidoId);
-
+            PedidoEntity pedido = em.createQuery("""
+            SELECT p FROM PedidoEntity p
+            LEFT JOIN FETCH p.itens i
+            LEFT JOIN FETCH i.produto
+            WHERE p.id = :id
+        """, PedidoEntity.class)
+                    .setParameter("id", pedidoId)
+                    .getSingleResult();
             if (pedido == null) {
                 throw new RuntimeException("Pedido não encontrado!");
             }
@@ -195,8 +201,26 @@ public class PedidoService {
                 throw new RuntimeException("Pedido não pode ser pago!");
             }
 
+            for (ItemPedidoEntity item : pedido.getItens()) {
+                ProdutoEntity produto = item.getProduto();
+                BigDecimal estoqueAtual = produto.getEstoque();
+                BigDecimal quantidadeVendida = item.getQuantidade();
+
+                if (estoqueAtual.compareTo(quantidadeVendida) < 0) {
+                    throw new RuntimeException(
+                            "Estoque insuficiente para o produto: "
+                                    + produto.getNome()
+                    );
+                }
+
+                // Subtrai do estoque
+                produto.setEstoque(
+                        estoqueAtual.subtract(quantidadeVendida)
+                );
+            }
             pedido.setStatus("PAGO");
             tx.commit();
+
         } catch (Exception e) {
             if (tx.isActive()) tx.rollback();
             throw e;
