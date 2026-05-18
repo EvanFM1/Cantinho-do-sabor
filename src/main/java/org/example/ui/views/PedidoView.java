@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PedidoView extends JPanel {
@@ -51,11 +52,49 @@ public class PedidoView extends JPanel {
         setBackground(Theme.BACKGROUND);
 
         /*
-        LISTA
+        LISTA E RENDERIZADOR DE CORES
          */
         listModel = new DefaultListModel<>();
         listaPedidos = new JList<>(listModel);
         listaPedidos.setFont(Theme.TEXT_FONT);
+
+        // Define como a lista vai pintar as linhas baseado no status text
+        listaPedidos.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+                if (value != null) {
+                    String text = value.toString();
+
+                    if (text.contains("Status: PAGO")) {
+                        c.setBackground(new Color(200, 230, 201)); // Verde claro
+                        c.setForeground(new Color(30, 90, 30));     // Texto verde escuro
+                    } else if (text.contains("Status: CANCELADO")) {
+                        c.setBackground(new Color(255, 205, 210)); // Vermelho claro
+                        c.setForeground(new Color(150, 30, 30));    // Texto vermelho escuro
+                    } else {
+                        // Comportamento padrão para pedidos em ABERTO
+                        if (isSelected) {
+                            c.setBackground(list.getSelectionBackground());
+                            c.setForeground(list.getSelectionForeground());
+                        } else {
+                            c.setBackground(Color.WHITE);
+                            c.setForeground(Color.BLACK);
+                        }
+                    }
+                }
+
+                // Reaplica a cor de seleção do sistema caso o usuário clique na linha (opcional para feedback visual)
+                if (isSelected) {
+                    setBorder(BorderFactory.createLineBorder(Theme.PRIMARY, 2));
+                } else {
+                    setBorder(new EmptyBorder(8, 10, 8, 10));
+                }
+
+                return c;
+            }
+        });
 
         JScrollPane scroll = new JScrollPane(listaPedidos);
         scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -289,12 +328,19 @@ public class PedidoView extends JPanel {
     }
 
     /*
-    LISTAR
+    LISTAR (AGORA JUNTA ABERTO, PAGO E CANCELADO)
      */
     private void loadPedidos() {
         listModel.clear();
         Async.compute(
-                pedidoService::listarPedidosPendentes,
+                () -> {
+                    // Puxa as três listas separadas do banco e junta tudo em uma lista unificada
+                    List<PedidoEntity> tudo = new ArrayList<>();
+                    tudo.addAll(pedidoService.listarPedidosPorStatus("ABERTO"));
+                    tudo.addAll(pedidoService.listarPedidosPorStatus("PAGO"));
+                    tudo.addAll(pedidoService.listarPedidosPorStatus("CANCELADO"));
+                    return tudo;
+                },
                 pedidos -> {
                     cache = pedidos;
 
