@@ -9,6 +9,7 @@ import org.example.ui.theme.Theme;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.MaskFormatter;
 import java.awt.*;
 import java.util.List;
 
@@ -49,16 +50,27 @@ public class ClienteView extends JPanel {
         JScrollPane scroll = new JScrollPane(listaClientes);
         scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        /*
-        Campos
-         */
+        // Campos
         nomeField = createField("Nome");
         cpfField = createField("CPF");
-        telefoneField = createField("Telefone");
+        try {
+            MaskFormatter telefoneMask =
+                    new MaskFormatter("## #####-####");
 
-        /*
-        Botões
-         */
+            telefoneMask.setPlaceholderCharacter('_');
+            telefoneField =
+                    new JFormattedTextField(telefoneMask);
+
+            telefoneField.setFont(Theme.TEXT_FONT);
+            telefoneField.setBorder(
+                    BorderFactory.createTitledBorder("Telefone")
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Botões
         salvarButton = UI.button("Cadastrar", b -> {
             b.setBackground(Theme.PRIMARY);
             b.setForeground(Color.WHITE);
@@ -194,7 +206,16 @@ public class ClienteView extends JPanel {
     private void salvarCliente() {
         String nome = nomeField.getText().trim();
         String cpf = cpfField.getText().trim();
-        String telefone = telefoneField.getText().trim();
+        String telefone = telefoneField.getText()
+                .replace("_", "")
+                .replace(" ", "")
+                .replace("-", "")
+                .trim();
+        if (telefone.isBlank()) {
+            telefone = null;
+        } else {
+            telefone = telefoneField.getText().trim();
+        }
 
         if (nome.isBlank() || cpf.isBlank()) {
             JOptionPane.showMessageDialog(
@@ -272,7 +293,18 @@ public class ClienteView extends JPanel {
         ClienteEntity cliente = cacheClientes.get(index);
         cliente.setNome(nomeField.getText().trim());
         cliente.setCpf(cpfField.getText().trim());
-        cliente.setTelefone(telefoneField.getText().trim());
+        String telefone = telefoneField.getText()
+                .replace("_", "")
+                .replace(" ", "")
+                .replace("-", "")
+                .trim();
+        if (telefone.isBlank()) {
+            telefone = null;
+        } else {
+            telefone = telefoneField.getText().trim();
+        }
+
+        cliente.setTelefone(telefone);
 
         if (cliente.getNome().isBlank()) {
             JOptionPane.showMessageDialog(
@@ -382,7 +414,10 @@ public class ClienteView extends JPanel {
                                 "• ID: " + c.getId()
                                         + " | " + c.getNome()
                                         + " | CPF: " + c.getCpf()
-                                        + " | Telefone: " + c.getTelefone()
+                                        + " | Telefone: " +
+                                        (c.getTelefone() == null || c.getTelefone().isBlank()
+                                                ? "Sem Telefone"
+                                                : c.getTelefone())
                         );
                     }
                 },
