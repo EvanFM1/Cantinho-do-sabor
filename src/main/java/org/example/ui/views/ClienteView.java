@@ -190,9 +190,7 @@ public class ClienteView extends JPanel {
         return field;
     }
 
-    /*
-    Criar
-     */
+    // Criar
     private void salvarCliente() {
         String nome = nomeField.getText().trim();
         String cpf = cpfField.getText().trim();
@@ -202,6 +200,16 @@ public class ClienteView extends JPanel {
             JOptionPane.showMessageDialog(
                     this,
                     "Nome e CPF são obrigatórios!",
+                    "Validação",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        if (!cpf.matches("\\d{11}")) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "CPF deve conter exatamente 11 números!",
                     "Validação",
                     JOptionPane.WARNING_MESSAGE
             );
@@ -249,9 +257,7 @@ public class ClienteView extends JPanel {
         );
     }
 
-    /*
-    Editar
-     */
+    // Editar
     private void editarCliente() {
         int index = listaClientes.getSelectedIndex();
 
@@ -267,6 +273,26 @@ public class ClienteView extends JPanel {
         cliente.setNome(nomeField.getText().trim());
         cliente.setCpf(cpfField.getText().trim());
         cliente.setTelefone(telefoneField.getText().trim());
+
+        if (cliente.getNome().isBlank()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Nome é obrigatório!",
+                    "Validação",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        if (!cliente.getCpf().matches("\\d{11}")) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "CPF deve conter exatamente 11 números!",
+                    "Validação",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
 
         Async.compute(
                 () -> {
@@ -295,9 +321,7 @@ public class ClienteView extends JPanel {
         );
     }
 
-    /*
-    Deletar
-     */
+    // Deletar
     private void deletarCliente() {
         int index = listaClientes.getSelectedIndex();
 
@@ -345,9 +369,7 @@ public class ClienteView extends JPanel {
         );
     }
 
-    /*
-    Lista
-     */
+    // Lista
     private void loadClientes() {
         listModel.clear();
         Async.compute(
@@ -375,9 +397,7 @@ public class ClienteView extends JPanel {
         );
     }
 
-    /*
-    Preenche os campos ao clicar
-     */
+    // Preenche os campos ao clicar
     private void preencherCampos() {
         int index = listaClientes.getSelectedIndex();
 

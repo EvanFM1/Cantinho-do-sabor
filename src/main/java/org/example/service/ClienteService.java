@@ -19,12 +19,17 @@ public class ClienteService {
     public ClienteEntity criarCliente(ClienteEntity cliente) {
         EntityManager em = emf.createEntityManager();
         EntityTransaction tx = em.getTransaction();
-
         ClienteRepository repo = new ClienteRepository(em);
+
         try {
             tx.begin();
+
             if (cliente.getNome() == null || cliente.getNome().isBlank()) {
                 throw new RuntimeException("O nome do cliente é obrigatório!");
+            }
+
+            if (cliente.getCpf() == null || !cliente.getCpf().matches("\\d{11}")) {
+                throw new RuntimeException("CPF deve conter exatamente 11 números!");
             }
 
             ClienteEntity salvo = repo.salvar(cliente);
@@ -65,12 +70,20 @@ public class ClienteService {
     public ClienteEntity atualizarCliente(Long id, ClienteEntity dados) {
         EntityManager em = emf.createEntityManager();
         EntityTransaction tx = em.getTransaction();
-
         ClienteRepository repo = new ClienteRepository(em);
+
         try {
             tx.begin();
             ClienteEntity cliente = repo.buscarPorId(id)
                     .orElseThrow(() -> new RuntimeException("Cliente não encontrado!"));
+
+            if (dados.getNome() == null || dados.getNome().isBlank()) {
+                throw new RuntimeException("O nome do cliente é obrigatório!");
+            }
+
+            if (dados.getCpf() == null || !dados.getCpf().matches("\\d{11}")) {
+                throw new RuntimeException("CPF deve conter exatamente 11 números!");
+            }
 
             cliente.setNome(dados.getNome());
             cliente.setCpf(dados.getCpf());
