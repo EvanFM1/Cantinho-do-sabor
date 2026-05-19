@@ -35,6 +35,7 @@ public class PedidoView extends JPanel {
     private JButton listarButton;
     private JButton totalButton;
     private JButton adicionarItemButton;
+    private JButton limparConcluidosButton; // Declarado aqui
 
     private List<PedidoEntity> cache;
 
@@ -145,11 +146,16 @@ public class PedidoView extends JPanel {
             b.setForeground(Color.WHITE);
         });
 
+        limparConcluidosButton = UI.button("Limpar Concluídos", b -> {
+            b.setBackground(new Color(40, 40, 40));
+            b.setForeground(Color.WHITE);
+        });
+
         /*
         FORM
          */
         JPanel form = UI.panel(p -> {
-                    p.setLayout(new GridLayout(14, 1, 5, 5));
+                    p.setLayout(new GridLayout(15, 1, 5, 5)); // Ajustado de 14 para 15
                     p.setBackground(Theme.SURFACE);
                     p.setBorder(new EmptyBorder(20, 20, 20, 20));
                     p.setPreferredSize(new Dimension(320, 0));
@@ -163,7 +169,8 @@ public class PedidoView extends JPanel {
                 pagarButton,
                 cancelarButton,
                 totalButton,
-                listarButton
+                listarButton,
+                limparConcluidosButton // Adicionado no painel visual
         );
 
         add(scroll, BorderLayout.CENTER);
@@ -181,6 +188,7 @@ public class PedidoView extends JPanel {
             loadProdutos();
         });
         adicionarItemButton.addActionListener(e -> adicionarItem());
+        limparConcluidosButton.addActionListener(e -> limparPedidosPainel());
 
         listaPedidos.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -194,6 +202,30 @@ public class PedidoView extends JPanel {
         field.setBorder(BorderFactory.createTitledBorder(title));
         field.setFont(Theme.TEXT_FONT);
         return field;
+    }
+
+    /*
+    REMOVER CONCLUÍDOS DO PAINEL
+     */
+    private void limparPedidosPainel() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Deseja remover do painel todos os pedidos PAGOS e CANCELADOS?",
+                "Limpar Painel", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            Async.compute(
+                    () -> {
+                        pedidoService.limparPedidosConcluidosDoBanco();
+                        return null;
+                    },
+                    r -> {
+                        JOptionPane.showMessageDialog(this, "Painel atualizado!");
+                        loadPedidos();
+                        clearFields();
+                    },
+                    this::showError
+            );
+        }
     }
 
     /*

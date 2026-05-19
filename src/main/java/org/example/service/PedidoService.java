@@ -278,4 +278,34 @@ public class PedidoService {
             em.close();
         }
     }
+
+    public void limparPedidosConcluidosDoBanco() {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+
+            // 1. Apaga registros de vendas usando a chave estrangeira correta (fk_pedido_id)
+            em.createNativeQuery(
+                    "DELETE FROM vendas WHERE fk_pedido_id IN (SELECT id FROM pedidos WHERE status IN ('PAGO', 'CANCELADO'))"
+            ).executeUpdate();
+
+            // 2. Apaga os itens de pedidos dos pedidos PAGOS ou CANCELADOS
+            em.createNativeQuery(
+                    "DELETE FROM itens_pedido WHERE pedido_id IN (SELECT id FROM pedidos WHERE status IN ('PAGO', 'CANCELADO'))"
+            ).executeUpdate();
+
+            // 3. Apaga os pedidos PAGOS ou CANCELADOS
+            em.createNativeQuery(
+                    "DELETE FROM pedidos WHERE status IN ('PAGO', 'CANCELADO')"
+            ).executeUpdate();
+
+            tx.commit();
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw e;
+        } finally {
+            em.close();
+        }
+    }
 }
