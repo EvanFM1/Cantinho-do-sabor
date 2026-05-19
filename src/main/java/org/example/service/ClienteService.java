@@ -7,6 +7,7 @@ import jakarta.persistence.EntityTransaction;
 import org.example.entity.ClienteEntity;
 import org.example.repository.ClienteRepository;
 
+import javax.swing.*;
 import java.util.List;
 
 public class ClienteService {
@@ -30,6 +31,15 @@ public class ClienteService {
 
             if (cliente.getCpf() == null || !cliente.getCpf().matches("\\d{11}")) {
                 throw new RuntimeException("CPF deve conter exatamente 11 números!");
+            }
+
+            if (cliente.getTelefone() != null &&
+                    !cliente.getTelefone().isBlank() &&
+                    !cliente.getTelefone().matches("\\d{2}\\s\\d{5}-\\d{4}")) {
+
+                throw new RuntimeException(
+                        "Telefone deve estar no formato: 45 99999-9999"
+                );
             }
 
             ClienteEntity salvo = repo.salvar(cliente);
@@ -83,6 +93,15 @@ public class ClienteService {
 
             if (dados.getCpf() == null || !dados.getCpf().matches("\\d{11}")) {
                 throw new RuntimeException("CPF deve conter exatamente 11 números!");
+            }
+
+            if (dados.getTelefone() != null &&
+                    !dados.getTelefone().isBlank() &&
+                    !dados.getTelefone().matches("\\d{2}\\s\\d{5}-\\d{4}")) {
+
+                throw new RuntimeException(
+                        "Telefone deve estar no formato: 45 99999-9999"
+                );
             }
 
             cliente.setNome(dados.getNome());
