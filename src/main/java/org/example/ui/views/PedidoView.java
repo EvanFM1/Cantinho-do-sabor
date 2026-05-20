@@ -56,6 +56,7 @@ public class PedidoView extends JPanel {
         listaPedidos = new JList<>(listModel);
         listaPedidos.setFont(Theme.TEXT_FONT);
 
+        // --- RENDERIZADOR DE CORES ---
         listaPedidos.setCellRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
