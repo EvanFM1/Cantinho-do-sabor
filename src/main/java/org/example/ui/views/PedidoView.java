@@ -56,6 +56,42 @@ public class PedidoView extends JPanel {
         listaPedidos = new JList<>(listModel);
         listaPedidos.setFont(Theme.TEXT_FONT);
 
+        listaPedidos.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+                if (value != null) {
+                    String text = value.toString();
+
+                    if (text.contains("Status: PAGO")) {
+                        c.setBackground(new Color(200, 230, 201)); // Verde claro
+                        c.setForeground(new Color(30, 90, 30));     // Texto verde escuro
+                    } else if (text.contains("Status: CANCELADO")) {
+                        c.setBackground(new Color(255, 205, 210)); // Vermelho claro
+                        c.setForeground(new Color(150, 30, 30));    // Texto vermelho escuro
+                    } else {
+                        // Padrão para pedidos em ABERTO
+                        if (isSelected) {
+                            c.setBackground(list.getSelectionBackground());
+                            c.setForeground(list.getSelectionForeground());
+                        } else {
+                            c.setBackground(Color.WHITE);
+                            c.setForeground(Color.BLACK);
+                        }
+                    }
+                }
+
+                if (isSelected) {
+                    setBorder(BorderFactory.createLineBorder(Theme.PRIMARY, 2));
+                } else {
+                    setBorder(new EmptyBorder(8, 10, 8, 10));
+                }
+
+                return c;
+            }
+        });
+
         JScrollPane scroll = new JScrollPane(listaPedidos);
         scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
 
@@ -188,7 +224,7 @@ public class PedidoView extends JPanel {
                         return null;
                     },
                     r -> {
-                        JOptionPane.showMessageDialog(this, "Painel atualizado!");
+                        JOptionPane.showMessageDialog(this, "Painel updated!");
                         loadPedidos();
                         clearFields();
                     },
@@ -228,7 +264,12 @@ public class PedidoView extends JPanel {
         try {
             Long pedidoId = requirePedidoId();
             ProdutoEntity produto = (ProdutoEntity) produtoCombo.getSelectedItem();
-            BigDecimal qtd = new BigDecimal(quantidadeField.getText().trim());
+
+            String qtdTexto = quantidadeField.getText().trim();
+            if (qtdTexto.isBlank()) {
+                throw new IllegalArgumentException("Digite a quantidade.");
+            }
+            BigDecimal qtd = new BigDecimal(qtdTexto);
 
             if (produto == null) {
                 throw new IllegalArgumentException("Selecione um produto.");
