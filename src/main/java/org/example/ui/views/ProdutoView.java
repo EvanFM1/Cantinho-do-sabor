@@ -53,9 +53,7 @@ public class ProdutoView extends JPanel {
         setLayout(new BorderLayout());
         setBackground(Theme.BACKGROUND);
 
-        /*
-         * LISTA
-         */
+        // LISTA
         listModel = new DefaultListModel<>();
         listaProdutos = new JList<>(listModel);
         listaProdutos.setFont(Theme.TEXT_FONT);
@@ -70,18 +68,14 @@ public class ProdutoView extends JPanel {
                 new EmptyBorder(10, 10, 10, 10)
         );
 
-        /*
-         * CAMPOS
-         */
+        // CAMPOS
         nomeField = createField("Nome");
         descricaoField = createField("Descrição");
         precoField = createField("Preço");
         estoqueField = createField("Quantidade");
         produtoIdField = createField("Produto ID");
 
-        /*
-         * COMBO CATEGORIA
-         */
+        // COMBO CATEGORIA
         categoriaCombo = new JComboBox<>();
         categoriaCombo.setBorder(
                 BorderFactory.createTitledBorder(
@@ -117,9 +111,7 @@ public class ProdutoView extends JPanel {
                 }
         );
 
-        /*
-         * BOTÕES
-         */
+        // BOTÕES
         criarButton = UI.button("Criar Produto", b -> {
             b.setBackground(Theme.PRIMARY);
             b.setForeground(Color.WHITE);
@@ -145,11 +137,8 @@ public class ProdutoView extends JPanel {
             b.setForeground(Color.WHITE);
         });
 
-        /*
-         * FORM
-         */
+        // FORM
         JPanel form = UI.panel(p -> {
-
                     p.setLayout(
                             new GridLayout(12, 1, 5, 5)
                     );
@@ -178,15 +167,10 @@ public class ProdutoView extends JPanel {
                 atualizarButton
         );
 
-        /*
-         * LAYOUT
-         */
         add(scroll, BorderLayout.CENTER);
         add(form, BorderLayout.EAST);
 
-        /*
-         * EVENTOS
-         */
+        // EVENTOS
         criarButton.addActionListener(
                 e -> criarProduto()
         );
@@ -212,9 +196,7 @@ public class ProdutoView extends JPanel {
                 e -> preencherCampos()
         );
 
-        /*
-         * CLICK FORA
-         */
+        // CLICK FORA
         Events.mouse(this, mouse -> {
             mouse.onPressed(event -> {
                 Component clicked =
@@ -238,9 +220,7 @@ public class ProdutoView extends JPanel {
             });
         });
 
-        /*
-         * KEYBINDS
-         */
+        // KEYBINDS
         Events.keyBinder(this, key -> {
             key.on("ENTER", () -> {
                 if (nomeField.isFocusOwner()
@@ -274,9 +254,6 @@ public class ProdutoView extends JPanel {
         return field;
     }
 
-    /*
-     * CARREGAR CATEGORIAS
-     */
     private void refreshCategorias() {
         categoriaCombo.removeAllItems();
         List<CategoriaEntity> categorias =
@@ -287,9 +264,7 @@ public class ProdutoView extends JPanel {
         }
     }
 
-    /*
-     * CRIAR
-     */
+    // CRIAR
     private void criarProduto() {
         String nome =
                 nomeField.getText().trim();
@@ -368,9 +343,7 @@ public class ProdutoView extends JPanel {
         );
     }
 
-    /*
-     * DELETAR
-     */
+    // DELETAR
     private void deletarProduto() {
         Long id;
         try {
@@ -433,27 +406,62 @@ public class ProdutoView extends JPanel {
         );
     }
 
-    /*
-     * ADD ESTOQUE
-     */
+    // ADD ESTOQUE
     private void addEstoque() {
         try {
-            Long id =
-                    Long.parseLong(
-                            produtoIdField.getText()
-                    );
+            String idText = produtoIdField.getText().trim();
+            String qtdText = estoqueField.getText().trim();
 
-            BigDecimal qtd =
-                    new BigDecimal(
-                            estoqueField.getText()
-                    );
+            if (idText.isBlank()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Selecione um produto na lista antes de adicionar estoque!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            if (qtdText.isBlank()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Informe a quantidade de estoque!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            Long id;
+            BigDecimal qtd;
+
+            try {
+                id = Long.parseLong(idText);
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Produto inválido selecionado!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            try {
+                qtd = new BigDecimal(qtdText);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Quantidade inválida!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
 
             Async.compute(
                     () -> {
-                        produtoService.adicionarEstoque(
-                                id,
-                                qtd
-                        );
+                        produtoService.adicionarEstoque(id, qtd);
                         return null;
                     },
 
@@ -471,26 +479,62 @@ public class ProdutoView extends JPanel {
         }
     }
 
-    /*
-     * REMOVER ESTOQUE
-     */
+    // REMOVER ESTOQUE
     private void removerEstoque() {
         try {
-            Long id =
-                    Long.parseLong(
-                            produtoIdField.getText()
-                    );
+            String idText = produtoIdField.getText().trim();
+            String qtdText = estoqueField.getText().trim();
 
-            BigDecimal qtd =
-                    new BigDecimal(
-                            estoqueField.getText()
-                    );
+            if (idText.isBlank()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Selecione um produto na lista antes de remover estoque!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            if (qtdText.isBlank()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Informe a quantidade de estoque!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            Long id;
+            BigDecimal qtd;
+
+            try {
+                id = Long.parseLong(idText);
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Produto inválido selecionado!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            try {
+                qtd = new BigDecimal(qtdText);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Quantidade inválida!",
+                        "Validação",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
             Async.compute(
                     () -> {
-                        produtoService.removerEstoque(
-                                id,
-                                qtd
-                        );
+                        produtoService.removerEstoque(id, qtd);
                         return null;
                     },
 
@@ -508,9 +552,7 @@ public class ProdutoView extends JPanel {
         }
     }
 
-    /*
-     * LISTAR
-     */
+    // LISTAR
     private void loadProdutos() {
         listModel.clear();
         Async.compute(
@@ -537,9 +579,7 @@ public class ProdutoView extends JPanel {
         );
     }
 
-    /*
-     * PREENCHER
-     */
+    // PREENCHER
     private void preencherCampos() {
         int index =
                 listaProdutos.getSelectedIndex();

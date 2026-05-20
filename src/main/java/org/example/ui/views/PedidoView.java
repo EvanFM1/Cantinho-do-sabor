@@ -35,7 +35,7 @@ public class PedidoView extends JPanel {
     private JButton listarButton;
     private JButton totalButton;
     private JButton adicionarItemButton;
-    private JButton limparConcluidosButton; // Declarado aqui
+    private JButton limparConcluidosButton;
 
     private List<PedidoEntity> cache;
 
@@ -52,70 +52,20 @@ public class PedidoView extends JPanel {
         setLayout(new BorderLayout());
         setBackground(Theme.BACKGROUND);
 
-        /*
-        LISTA E RENDERIZADOR DE CORES
-         */
         listModel = new DefaultListModel<>();
         listaPedidos = new JList<>(listModel);
         listaPedidos.setFont(Theme.TEXT_FONT);
 
-        // Define como a lista vai pintar as linhas baseado no status text
-        listaPedidos.setCellRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-
-                if (value != null) {
-                    String text = value.toString();
-
-                    if (text.contains("Status: PAGO")) {
-                        c.setBackground(new Color(200, 230, 201)); // Verde claro
-                        c.setForeground(new Color(30, 90, 30));     // Texto verde escuro
-                    } else if (text.contains("Status: CANCELADO")) {
-                        c.setBackground(new Color(255, 205, 210)); // Vermelho claro
-                        c.setForeground(new Color(150, 30, 30));    // Texto vermelho escuro
-                    } else {
-                        // Comportamento padrão para pedidos em ABERTO
-                        if (isSelected) {
-                            c.setBackground(list.getSelectionBackground());
-                            c.setForeground(list.getSelectionForeground());
-                        } else {
-                            c.setBackground(Color.WHITE);
-                            c.setForeground(Color.BLACK);
-                        }
-                    }
-                }
-
-                // Reaplica a cor de seleção do sistema caso o usuário clique na linha (opcional para feedback visual)
-                if (isSelected) {
-                    setBorder(BorderFactory.createLineBorder(Theme.PRIMARY, 2));
-                } else {
-                    setBorder(new EmptyBorder(8, 10, 8, 10));
-                }
-
-                return c;
-            }
-        });
-
         JScrollPane scroll = new JScrollPane(listaPedidos);
         scroll.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        /*
-        CAMPOS
-         */
         clienteIdField = createField("Cliente ID");
         pedidoIdField = createField("Pedido ID (selecionado)");
         quantidadeField = createField("Quantidade");
 
-        /*
-        PRODUTO COMBO
-         */
         produtoCombo = new JComboBox<>();
         produtoCombo.setBorder(BorderFactory.createTitledBorder("Produto"));
 
-        /*
-        BOTÕES
-         */
         criarButton = UI.button("Criar Pedido", b -> {
             b.setBackground(Theme.PRIMARY);
             b.setForeground(Color.WHITE);
@@ -151,11 +101,8 @@ public class PedidoView extends JPanel {
             b.setForeground(Color.WHITE);
         });
 
-        /*
-        FORM
-         */
         JPanel form = UI.panel(p -> {
-                    p.setLayout(new GridLayout(15, 1, 5, 5)); // Ajustado de 14 para 15
+                    p.setLayout(new GridLayout(15, 1, 5, 5));
                     p.setBackground(Theme.SURFACE);
                     p.setBorder(new EmptyBorder(20, 20, 20, 20));
                     p.setPreferredSize(new Dimension(320, 0));
@@ -170,15 +117,12 @@ public class PedidoView extends JPanel {
                 cancelarButton,
                 totalButton,
                 listarButton,
-                limparConcluidosButton // Adicionado no painel visual
+                limparConcluidosButton
         );
 
         add(scroll, BorderLayout.CENTER);
         add(form, BorderLayout.EAST);
 
-        /*
-        EVENTS
-         */
         criarButton.addActionListener(e -> criarPedido());
         pagarButton.addActionListener(e -> pagarPedido());
         cancelarButton.addActionListener(e -> cancelarPedido());
@@ -204,9 +148,34 @@ public class PedidoView extends JPanel {
         return field;
     }
 
-    /*
-    REMOVER CONCLUÍDOS DO PAINEL
-     */
+    private Long requirePedidoId() {
+        String text = pedidoIdField.getText().trim();
+
+        if (text.isBlank()) {
+            throw new IllegalArgumentException("Selecione um pedido na lista.");
+        }
+
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Pedido inválido selecionado.");
+        }
+    }
+
+    private Long requireClienteId() {
+        String text = clienteIdField.getText().trim();
+
+        if (text.isBlank()) {
+            throw new IllegalArgumentException("Informe o ID do cliente.");
+        }
+
+        try {
+            return Long.parseLong(text);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("ID do cliente inválido.");
+        }
+    }
+
     private void limparPedidosPainel() {
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Deseja remover do painel todos os pedidos PAGOS e CANCELADOS?",
@@ -228,12 +197,7 @@ public class PedidoView extends JPanel {
         }
     }
 
-    /*
-    CARREGAR PRODUTOS
-     */
     private void loadProdutos() {
-        System.out.println("CARREGANDO PRODUTOS...");
-        System.out.println(produtoService.listarProdutos().size());
         produtoCombo.removeAllItems();
 
         List<ProdutoEntity> produtos = produtoService.listarProdutos();
@@ -242,12 +206,9 @@ public class PedidoView extends JPanel {
         }
     }
 
-    /*
-    CRIAR PEDIDO
-     */
     private void criarPedido() {
         try {
-            Long clienteId = Long.parseLong(clienteIdField.getText().trim());
+            Long clienteId = requireClienteId();
 
             Async.compute(
                     () -> pedidoService.criarPedido(clienteId),
@@ -263,17 +224,14 @@ public class PedidoView extends JPanel {
         }
     }
 
-    /*
-    ADICIONAR ITEM
-     */
     private void adicionarItem() {
         try {
-            Long pedidoId = Long.parseLong(pedidoIdField.getText().trim());
+            Long pedidoId = requirePedidoId();
             ProdutoEntity produto = (ProdutoEntity) produtoCombo.getSelectedItem();
             BigDecimal qtd = new BigDecimal(quantidadeField.getText().trim());
 
             if (produto == null) {
-                throw new RuntimeException("Selecione um produto!");
+                throw new IllegalArgumentException("Selecione um produto.");
             }
 
             Async.compute(
@@ -296,12 +254,9 @@ public class PedidoView extends JPanel {
         }
     }
 
-    /*
-    PAGAR
-     */
     private void pagarPedido() {
         try {
-            Long id = Long.parseLong(pedidoIdField.getText().trim());
+            Long id = requirePedidoId();
 
             Async.compute(
                     () -> {
@@ -319,12 +274,9 @@ public class PedidoView extends JPanel {
         }
     }
 
-    /*
-    CANCELAR
-     */
     private void cancelarPedido() {
         try {
-            Long id = Long.parseLong(pedidoIdField.getText().trim());
+            Long id = requirePedidoId();
 
             Async.compute(
                     () -> {
@@ -342,12 +294,9 @@ public class PedidoView extends JPanel {
         }
     }
 
-    /*
-    TOTAL
-     */
     private void calcularTotal() {
         try {
-            Long id = Long.parseLong(pedidoIdField.getText().trim());
+            Long id = requirePedidoId();
 
             Async.compute(
                     () -> pedidoService.calcularTotal(id),
@@ -359,14 +308,10 @@ public class PedidoView extends JPanel {
         }
     }
 
-    /*
-    LISTAR (AGORA JUNTA ABERTO, PAGO E CANCELADO)
-     */
     private void loadPedidos() {
         listModel.clear();
         Async.compute(
                 () -> {
-                    // Puxa as três listas separadas do banco e junta tudo em uma lista unificada
                     List<PedidoEntity> tudo = new ArrayList<>();
                     tudo.addAll(pedidoService.listarPedidosPorStatus("ABERTO"));
                     tudo.addAll(pedidoService.listarPedidosPorStatus("PAGO"));
@@ -388,9 +333,6 @@ public class PedidoView extends JPanel {
         );
     }
 
-    /*
-    SELEÇÃO
-     */
     private void preencherCampos() {
         int index = listaPedidos.getSelectedIndex();
 
@@ -409,6 +351,17 @@ public class PedidoView extends JPanel {
     }
 
     private void showError(Throwable e) {
-        JOptionPane.showMessageDialog(this, e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+        String msg = e.getMessage();
+
+        if (msg == null || msg.isBlank()) {
+            msg = "Erro inesperado.";
+        }
+
+        JOptionPane.showMessageDialog(
+                this,
+                msg,
+                "Erro",
+                JOptionPane.ERROR_MESSAGE
+        );
     }
 }
