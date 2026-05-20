@@ -100,7 +100,7 @@ public class ClienteService {
                     !dados.getTelefone().matches("\\d{2}\\s\\d{5}-\\d{4}")) {
 
                 throw new RuntimeException(
-                        "Telefone deve estar no formato: 45 99999-9999"
+                        "Telefone deve estar no formato: XX 99999-9999"
                 );
             }
 
