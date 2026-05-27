@@ -1,6 +1,6 @@
 package org.example.util;
 
-import org.example.entity.UsuarioEntity;
+import org.example.model.entity.UsuarioEntity;
 
 public class Session {
     private static UsuarioEntity usuarioLogado;

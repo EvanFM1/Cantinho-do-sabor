@@ -4,15 +4,15 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 
-import org.example.service.CategoriaService;
-import org.example.service.ClienteService;
-import org.example.service.ItemPedidoService;
-import org.example.service.PedidoService;
-import org.example.service.ProdutoService;
-import org.example.service.UsuarioService;
-import org.example.service.VendaService;
+import org.example.model.service.CategoriaService;
+import org.example.model.service.ClienteService;
+import org.example.model.service.ItemPedidoService;
+import org.example.model.service.PedidoService;
+import org.example.model.service.ProdutoService;
+import org.example.model.service.UsuarioService;
+import org.example.model.service.VendaService;
 
-import org.example.ui.views.LoginView;
+import org.example.view.LoginView;
 
 import org.flywaydb.core.Flyway;
 

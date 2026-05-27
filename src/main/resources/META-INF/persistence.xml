@@ -7,14 +7,14 @@
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
         <!-- Entidades -->
-        <class>org.example.entity.CategoriaEntity</class>
-        <class>org.example.entity.ClienteEntity</class>
-        <class>org.example.entity.FuncionarioEntity</class>
-        <class>org.example.entity.ItemPedidoEntity</class>
-        <class>org.example.entity.PedidoEntity</class>
-        <class>org.example.entity.ProdutoEntity</class>
-        <class>org.example.entity.VendaEntity</class>
-        <class>org.example.entity.UsuarioEntity</class>
+        <class>org.example.model.entity.CategoriaEntity</class>
+        <class>org.example.model.entity.ClienteEntity</class>
+        <class>org.example.model.entity.FuncionarioEntity</class>
+        <class>org.example.model.entity.ItemPedidoEntity</class>
+        <class>org.example.model.entity.PedidoEntity</class>
+        <class>org.example.model.entity.ProdutoEntity</class>
+        <class>org.example.model.entity.VendaEntity</class>
+        <class>org.example.model.entity.UsuarioEntity</class>
 
         <properties>
 
