@@ -199,12 +199,12 @@ public class DashboardView extends JFrame {
 
         sidebar.addMenuItem(
                 "Relatórios",
-                controller::abrirRelatorios
+                () -> controller.abrirRelatorios()
         );
 
         sidebar.addMenuItem(
                 "Sair",
-                controller::logout
+                () -> controller.logout()
         );
         return sidebar;
     }
